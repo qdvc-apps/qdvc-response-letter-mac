@@ -1,0 +1,42 @@
+sections:
+  - key: s-590c8091
+    role: senior-editor
+    title: Senior Editor
+    prefix: SE
+    anchor: 636
+    comments:
+      - c-77538a29
+      - c-539c8efe
+      - c-75ce7bb8
+  - key: s-38cb570f
+    role: associate-editor
+    title: Associate Editor
+    prefix: AE
+    anchor: 1286
+    comments:
+      - c-fab782c3
+      - c-e9278c2c
+      - c-2a247b36
+  - key: s-831e254c
+    role: reviewer
+    number: 1
+    title: Reviewer 1
+    prefix: RE1
+    anchor: 1993
+    comments:
+      - c-1f692e4d
+      - c-2c19586f
+      - c-bc983f88
+      - c-f553de28
+      - c-cb04b65b
+  - key: s-04ca34d4
+    role: reviewer
+    number: 2
+    title: Reviewer 2
+    prefix: RE2
+    anchor: 3039
+    comments:
+      - c-ce22fdce
+      - c-f9479582
+      - c-ab894a92
+      - c-5fd7fba3

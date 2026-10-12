@@ -1,0 +1,14 @@
+triage: red
+status: drafted
+source: [651+353]
+related: [c-fab782c3, c-2a247b36]
+text: |-
+  The reviewers and the AE see real promise in this paper. The field access is unusual and the question matters. My main concern echoes theirs: the theoretical contribution is not yet clear. At present the paper reads as a rich description of how one firm adopted digital twins, and the reader is left asking what we learn about organising more generally.
+ideas:
+  - Reframe around routines (see AE-01)
+  - Write the contribution in two sentences first, then rebuild the intro
+  - Discuss with Sam and Priya before drafting
+response: |-
+  Thank you for this encouraging assessment and for pinpointing the paper's main weakness. We have rebuilt the paper around a single theoretical contribution, which the introduction now states as follows:
+  > {{var:v-310ff8ae}}
+  As suggested by the Associate Editor (see our response to {{ref:c-fab782c3}}), we now draw on the literature on organisational routines rather than sociomateriality. The new theoretical background is in {{var:v-6f257d57}}.

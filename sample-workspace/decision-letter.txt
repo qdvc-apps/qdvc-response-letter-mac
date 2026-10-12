@@ -1,0 +1,59 @@
+Ref.: Ms. No. JIS-2026-0417
+Digital twins and the reorganisation of maintenance work: A field study
+Journal of Information Systems Practice
+
+Dear Dr Nguyen,
+
+Thank you for submitting your manuscript to the Journal of Information Systems Practice. Your paper has now been reviewed by two referees, the Associate Editor and myself. I am pleased to invite you to revise and resubmit the manuscript for a second round of review. This is a major revision, and there is no guarantee of eventual acceptance.
+
+Please address every comment below in a response letter, explaining how you have changed the manuscript or, where you disagree, why.
+
+Senior Editor
+
+The reviewers and the AE see real promise in this paper. The field access is unusual and the question matters. My main concern echoes theirs: the theoretical contribution is not yet clear. At present the paper reads as a rich description of how one firm adopted digital twins, and the reader is left asking what we learn about organising more generally.
+
+Second, the methods section needs to say much more about how the data were analysed. How did you move from interview transcripts to the three mechanisms in Figure 2?
+
+Finally, please shorten the paper. The current draft is 14,200 words; our limit is 11,000 including references.
+
+Associate Editor
+
+I agree with both reviewers that the empirical setting is a strength. I would like to draw your attention to three issues.
+
+1. Both reviewers question the framing around sociomateriality (R1 comment 2, R2 comment 1). I share their view that the paper does not need this framing and that it obscures your contribution. Consider building instead on the literature on routines, which seems to fit your data better.
+
+2. The paper needs a clearer account of the boundary conditions of your findings. Would the same mechanisms appear in a firm with a less hierarchical maintenance organisation?
+
+3. Please make sure the abstract and introduction state the contribution in one or two sentences.
+
+Reviewer #1
+
+This paper studies the introduction of a digital twin in the maintenance function of a large rail operator. I enjoyed reading it and think it could make a contribution, but it needs substantial work.
+
+1. The research question shifts between the introduction (how digital twins change maintenance work) and the discussion (how organisations govern data). Please settle on one.
+
+2. The sociomateriality framing feels bolted on. The concepts of entanglement and performativity are introduced on page 6 but are hardly used in the findings.
+
+3. I would like to know more about the sample. How many interviews were conducted, with whom, and over what period? The paper mentions "around fifty" interviews in one place and 47 in another.
+
+4. The quotations in the findings are very long. Some run to half a page. Shorter quotes, with more of your own interpretation around them, would help the reader.
+
+5. Minor: the paper uses "digital twin" and "digital shadow" interchangeably. These are distinct concepts in the engineering literature.
+
+Reviewer #2
+
+The paper addresses an important and timely topic. My comments are mostly about theory.
+
+1. Like the other reviewer I struggled with the sociomateriality lens. If the authors want to keep it, they need to show what it explains that other lenses cannot.
+
+2. The three mechanisms (anticipating, rehearsing and deferring) are interesting, but it is not clear how they relate to each other. Are they sequential? Do they reinforce one another? A process model would help.
+
+3. The discussion should engage with the work on predictive maintenance in operations management, which has studied similar settings.
+
+4. Table 3 is hard to read. Consider splitting it into two tables.
+
+I look forward to reading a revised version.
+
+Sincerely,
+Prof. Maria Lindqvist
+Senior Editor

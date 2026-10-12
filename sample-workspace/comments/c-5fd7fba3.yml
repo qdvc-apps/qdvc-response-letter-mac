@@ -1,0 +1,9 @@
+triage: green
+status: final
+source: [3655+66]
+related: []
+text: |-
+  4. Table 3 is hard to read. Consider splitting it into two tables.
+ideas: []
+response: |-
+  We have split Table 3 into Tables 3 and 4.

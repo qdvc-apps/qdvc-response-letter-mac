@@ -1,0 +1,11 @@
+triage: green
+status: final
+source: [1173+111]
+related: [c-f553de28]
+text: |-
+  Finally, please shorten the paper. The current draft is 14,200 words; our limit is 11,000 including references.
+ideas:
+  - Cut the second case vignette
+  - Merge sections 5.2 and 5.3
+response: |-
+  The revised manuscript is {{var:v-8f7a7b00}} including references, within the limit of 11,000. We shortened the findings mainly by shortening the quotations (see our response to {{ref:c-f553de28}}).

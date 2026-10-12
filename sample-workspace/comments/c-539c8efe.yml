@@ -1,0 +1,16 @@
+triage: yellow
+status: drafted
+source: [1006+165]
+related: [c-bc983f88]
+text: |-
+  Second, the methods section needs to say much more about how the data were analysed. How did you move from interview transcripts to the three mechanisms in Figure 2?
+ideas:
+  - Add a coding table
+  - Describe the three rounds of coding
+  - Mention the member checks with the maintenance planners
+response: |-
+  We agree that the analysis was under-described. {{var:v-6b7cff1f}} now explains how we moved from the {{var:v-054e6106}} to the three mechanisms, in three steps:
+  - open coding of the transcripts and field notes;
+  - grouping codes into **second-order themes**, shown in a new coding table (Appendix B);
+  - comparing the themes across the three depots to arrive at the mechanisms.
+  See also our response to {{ref:c-bc983f88}} on the sample.

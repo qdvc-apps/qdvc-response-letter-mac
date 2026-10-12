@@ -1,0 +1,11 @@
+format: 1
+app: QDVC Response Letter
+title: Response to the editors and reviewers
+manuscript: JIS-2026-0417
+numbering:
+  separator: "-"
+  digits: 2
+export:
+  font: Times New Roman
+  size: 11
+  quotes: italic

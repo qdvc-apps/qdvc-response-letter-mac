@@ -1,0 +1,10 @@
+triage: green
+status: todo
+source: [2901+136]
+related: []
+text: |-
+  5. Minor: the paper uses "digital twin" and "digital shadow" interchangeably. These are distinct concepts in the engineering literature.
+ideas:
+  - Search-and-replace 'digital shadow'
+  - Add a footnote on the distinction
+response: ""

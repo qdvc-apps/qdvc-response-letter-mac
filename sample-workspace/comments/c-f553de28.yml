@@ -1,0 +1,9 @@
+triage: green
+status: drafted
+source: [2737+162]
+related: [c-75ce7bb8]
+text: |-
+  4. The quotations in the findings are very long. Some run to half a page. Shorter quotes, with more of your own interpretation around them, would help the reader.
+ideas: []
+response: |-
+  We have shortened every quotation in the findings to at most four lines and added more of our own interpretation around them.

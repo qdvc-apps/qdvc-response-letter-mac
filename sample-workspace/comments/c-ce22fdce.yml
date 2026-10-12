@@ -1,0 +1,10 @@
+triage: red
+status: drafted
+source: [3141+163]
+related: [c-fab782c3]
+text: |-
+  1. Like the other reviewer I struggled with the sociomateriality lens. If the authors want to keep it, they need to show what it explains that other lenses cannot.
+ideas:
+  - Same as AE-01
+response: |-
+  Please see our response to {{ref:c-fab782c3}}.
