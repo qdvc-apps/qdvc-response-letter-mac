@@ -81,7 +81,8 @@ struct OpeningClosingView: View {
     @State private var closing = EditorHandle()
 
     var body: some View {
-        VSplitView {
+        PaneStack(storageKey: "openingClosing", items: [
+            .init(id: "opening", minHeight: 140, weight: 0.6, view: AnyView(
             Pane(title: "Before the table") {
                 FormatBar(handle: opening)
             } content: {
@@ -92,8 +93,8 @@ struct OpeningClosingView: View {
                     onChange: { model.setOpening($0) }, onFocus: { model.activeEditor = $0 },
                     onTokenDoubleClick: { model.openToken($0) }
                 )
-            }
-            .frame(minHeight: 160, idealHeight: 300)
+            })),
+            .init(id: "closing", minHeight: 110, weight: 0.4, view: AnyView(
             Pane(title: "After the table") {
                 FormatBar(handle: closing)
             } content: {
@@ -104,9 +105,8 @@ struct OpeningClosingView: View {
                     onChange: { model.setClosing($0) }, onFocus: { model.activeEditor = $0 },
                     onTokenDoubleClick: { model.openToken($0) }
                 )
-            }
-            .frame(minHeight: 120, idealHeight: 200)
-        }
+            })),
+        ])
     }
 }
 

@@ -31,7 +31,8 @@ struct CommentDetailView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 Divider()
-                VSplitView {
+                PaneStack(storageKey: "comment", items: [
+                    .init(id: "comment", minHeight: 90, weight: 0.27, view: AnyView(
                     Pane(title: "Editor/Reviewer comment") {
                         Button("Join Wrapped Lines") { model.unwrapCommentText(key) }
                             .help("Turn hard-wrapped lines into paragraphs")
@@ -52,9 +53,8 @@ struct CommentDetailView: View {
                             }
                         )
                     }
-                    .controlSize(.small)
-                    .frame(minHeight: 90, idealHeight: 170)
-
+                    .controlSize(.small))),
+                    .init(id: "ideas", minHeight: 70, weight: 0.18, view: AnyView(
                     Pane(title: "Ideas") {
                         Text("One dot point per line").font(.caption).foregroundStyle(.secondary)
                     } content: {
@@ -65,9 +65,8 @@ struct CommentDetailView: View {
                             placeholder: "Initial ideas for the response",
                             onChange: { model.setIdeas(key, $0) }
                         )
-                    }
-                    .frame(minHeight: 70, idealHeight: 120)
-
+                    })),
+                    .init(id: "response", minHeight: 160, weight: 0.55, view: AnyView(
                     Pane(title: "Response") {
                         FormatBar(handle: responseHandle, exclude: key)
                         Text("\(TextStats.wordCount(c.responseText.plainText { model.letter.tokenDisplay($0) })) words")
@@ -85,9 +84,8 @@ struct CommentDetailView: View {
                             onFocus: { model.activeEditor = $0 },
                             onTokenDoubleClick: { model.openToken($0) }
                         )
-                    }
-                    .frame(minHeight: 160, idealHeight: 340)
-                }
+                    })),
+                ])
             }
         }
     }

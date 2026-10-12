@@ -83,7 +83,8 @@ the main window hand over to each other by watching
 toolbar, sheet routing), `CommentDetailView` (the comment editor, format
 bar, inspectors), `LetterView` (decision letter, gutter), `PageViews`
 (Overview, Opening & Closing, Variables, Issues), `Sheets` (and the
-Settings window), `TextEditors` (below), `Style`.
+Settings window), `TextEditors` (below), `PaneStack` (resizable stacked
+panes), `Style`.
 
 ### 2.1 Editors
 
@@ -120,6 +121,13 @@ Never let a view's content decide the window's width (docs/DESIGN.md
 §Layout rule): no `.fixedSize()` on menus or pickers whose items are long
 (give them a width), `sizeThatFits` on every `NSViewRepresentable`, and the
 detail area in a flexible, clipped frame.
+
+Stacked, resizable panes use `PaneStack`, not SwiftUI's `VSplitView`: it
+measures the space with a GeometryReader and gives every pane exactly that
+width and its share of the height, so a pane can never be wider than the
+window (with `VSplitView`, the comment and Opening & Closing panes came out
+far wider than the window and their lines ran off the edge). Pane heights
+are remembered in the defaults (`panes.comment`, `panes.openingClosing`).
 
 Text views live in `TextScrollView`, which sets the text view to exactly
 the visible width (and at least the visible height) whenever it tiles, so
