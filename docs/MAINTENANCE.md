@@ -65,7 +65,8 @@ folder for checking.
 | `RichText.swift` | markup ↔ `RichText` (paragraphs, bold/italic, `Token`s), `TextStats` |
 | `Model.swift` | `Triage`, `Status`, `SectionRole`, `LetterSection`, `Comment`, `Variable`, `LetterSettings`, `ResponseLetter` (lookups, numbering, progress), `Keys` |
 | `Editing.swift` | sections, marking, moving, related, split, merge, pending references, Variables, `revert` (undo), `TextTools` |
-| `Diagnostics.swift` | `Issue`s |
+| `Diagnostics.swift` | `Issue`s, `CommentLink`s (`links()`) |
+| `LetterRevision.swift` | editing the decision letter: `LetterEdit`, `Remap`, `revision(newText:edits:)`, `apply(_:decisions:)` |
 | `Workspace.swift` | loading, saving by `WorkspacePart`, change detection |
 | `Docx.swift`, `Zip.swift` | the two Word exports; a stored-entry ZIP writer with CRC-32 |
 | `CSVExport.swift` | CSV |
@@ -156,6 +157,9 @@ AppKit's autoresizing keeps any difference between it and the scroll view
 - `revert` keeps typing done after the change it undoes.
 - `links()` gives related links once and cross-references by direction,
   pending ones separately.
+- Editing the decision letter shifts untouched comments and section
+  starts, finds moved text again, reports edited and removed comments with
+  sensible defaults, and undoes completely (`LetterRevisionTests`).
 - A workspace saves and loads to an identical letter; orphan comment files
   are kept; bad files are reported with file and line.
 - DOCX output is a valid ZIP with the table's header (not repeated on every

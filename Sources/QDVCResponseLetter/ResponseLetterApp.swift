@@ -110,6 +110,8 @@ struct ResponseCommands: Commands {
             Button("Export Comments as CSV…") { model.exportCSV() }
                 .disabled(!model.isOpen)
             Divider()
+            Button("Edit Decision Letter") { model.beginEditingLetter() }
+                .disabled(!model.isOpen || model.isEditingLetter)
             Button("Letter Settings…") { model.sheet = .letterSettings }
                 .keyboardShortcut("l", modifiers: [.command, .option])
                 .disabled(!model.isOpen)
@@ -165,7 +167,7 @@ struct ResponseCommands: Commands {
             Divider()
             Button("Mark as Comment") { model.markComment() }
                 .keyboardShortcut("k")
-                .disabled(model.selection != .decisionLetter || model.letterSelection.length == 0)
+                .disabled(model.selection != .decisionLetter || model.letterSelection.length == 0 || model.isEditingLetter)
             Button("New Section Here…") {
                 let text = (model.letter.decisionLetter as NSString)
                     .substring(with: NSRange(location: model.letterSelection.location,
@@ -173,7 +175,7 @@ struct ResponseCommands: Commands {
                 model.sheet = .section(model.newSectionDraft(anchor: model.letterSelection.location, hint: text))
             }
             .keyboardShortcut("k", modifiers: [.command, .shift])
-            .disabled(model.selection != .decisionLetter)
+            .disabled(model.selection != .decisionLetter || model.isEditingLetter)
             Button("New Section…") {
                 model.sheet = .section(model.newSectionDraft(anchor: nil, hint: ""))
             }

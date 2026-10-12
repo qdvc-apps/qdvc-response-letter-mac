@@ -3,6 +3,8 @@ import Foundation
 /// One file (or group of files) of a workspace, for saving only what changed.
 public enum WorkspacePart: Hashable {
     case settings
+    /// decision-letter.txt: written only when the letter is edited in the app.
+    case decisionLetter
     case sections
     case variables
     case opening
@@ -196,6 +198,8 @@ public enum Workspace {
             switch part {
             case .settings:
                 try writeYAML(encodeSettings(letter.settings), to: url.appendingPathComponent(letterFile))
+            case .decisionLetter:
+                try write(Data(letter.decisionLetter.utf8), to: url.appendingPathComponent(decisionFile))
             case .sections:
                 try writeYAML(encodeSections(letter.sections), to: url.appendingPathComponent(sectionsFile))
             case .variables:
@@ -375,6 +379,7 @@ extension ResponseLetter {
     public func changedParts(since old: ResponseLetter) -> Set<WorkspacePart> {
         var parts = Set<WorkspacePart>()
         if settings != old.settings { parts.insert(.settings) }
+        if decisionLetter != old.decisionLetter { parts.insert(.decisionLetter) }
         if sections != old.sections { parts.insert(.sections) }
         if variables != old.variables { parts.insert(.variables) }
         if opening != old.opening { parts.insert(.opening) }

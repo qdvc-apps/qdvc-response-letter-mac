@@ -8,7 +8,7 @@ files.
 ```
 My paper response letter/
   letter.yml             title, manuscript, numbering and export settings
-  decision-letter.txt    the decision letter as pasted; never rewritten
+  decision-letter.txt    the decision letter; rewritten only by Edit Letter
   sections.yml           the sections and the order of their comments
   comments/
     c-1a2b3c4d.yml       one file per comment, named by its stable key
@@ -45,9 +45,11 @@ export:
 
 ## decision-letter.txt
 
-The decision letter exactly as pasted (line endings normalised). Comments
-point into it by **UTF-16 offset** (the units of NSString), so the app never
-rewrites it, and editing it by hand would move the highlights.
+The decision letter (line endings normalised). Comments and section starts
+point into it by **UTF-16 offset** (the units of NSString). The app rewrites
+it only when you edit the letter in the app (Edit Letter on the Decision
+Letter page), and then carries every offset through your edits. Editing the
+file by hand would leave the offsets pointing at the wrong text.
 
 ## sections.yml
 

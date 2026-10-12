@@ -40,7 +40,11 @@ in [docs/DESIGN.md](docs/DESIGN.md).
   role, title and ID prefix (SE, AE, SIE, DE, TC, RE1, RE2…). Then select
   each comment's text and choose **Mark as Comment** (⌘K). Marked comments
   are highlighted, with their IDs in the margin; double-click one to open
-  it in the Response Editor.
+  it in the Response Editor. **Edit Letter** makes the letter editable
+  (to fix a paste, or to paste in a corrected version): marked comments
+  follow your edits, comments whose text moved are found again, and on
+  Done the app shows Before and Now for any comment whose text you changed
+  or deleted and asks what to do.
 - **Triage Editor**: ID, comment, triage and ideas for every comment. Triage each
   green (easy), yellow (trickier) or red (needs discussion with
   co-authors); the inspector shows the comment in full, with its triage,

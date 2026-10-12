@@ -502,6 +502,7 @@ extension ResponseLetter {
     /// done since in another field of the same comment is kept.
     public mutating func revert(changesFrom before: ResponseLetter, to after: ResponseLetter) {
         if before.settings != after.settings { settings = before.settings }
+        if before.decisionLetter != after.decisionLetter { decisionLetter = before.decisionLetter }
         if before.sections != after.sections { sections = before.sections }
         if before.variables != after.variables { variables = before.variables }
         if before.opening != after.opening { opening = before.opening }

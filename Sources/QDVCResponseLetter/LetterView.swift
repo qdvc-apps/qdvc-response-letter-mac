@@ -2,18 +2,21 @@ import AppKit
 import ResponseCore
 import SwiftUI
 
-/// The decision letter, read-only, with every marked comment highlighted
-/// and its ID in the margin. Select text, then Mark as Comment (⌘K) or New
-/// Section Here (⇧⌘K).
+/// The decision letter, with every marked comment highlighted and its ID
+/// in the margin. Select text, then Mark as Comment (⌘K) or New Section Here
+/// (⇧⌘K). Edit Letter makes it editable; marked comments follow the edits,
+/// and Done asks about any whose text was changed or deleted.
 struct LetterView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        let current = model.letter.commentKey(atSourceOffset: model.letterSelection.location)
-        let deco = decorations(current: current)
+        let editing = model.isEditingLetter
+        let current = editing ? nil : model.letter.commentKey(atSourceOffset: model.letterSelection.location)
+        let deco = decorations(current: current, edits: editing ? model.letterEdits : [])
         VStack(spacing: 0) {
             LetterTextView(
-                text: model.letter.decisionLetter,
+                text: editing ? model.letterDraft : model.letter.decisionLetter,
+                isEditing: editing,
                 highlights: deco.highlights,
                 labels: deco.labels,
                 size: CGFloat(model.editorFontSize),
@@ -25,8 +28,10 @@ struct LetterView: View {
                     if range.length > 0 { model.letterSectionChoice = model.inferredSection(for: range) }
                 },
                 onDoubleClickComment: { offset in
+                    guard !model.isEditingLetter else { return }
                     if let key = model.letter.commentKey(atSourceOffset: offset) { model.openComment(key) }
-                }
+                },
+                onEdits: { edits, text in model.recordLetterEdits(edits, text: text) }
             )
             Divider()
             LetterActionBar(current: current)
@@ -34,17 +39,22 @@ struct LetterView: View {
     }
 
     /// Highlights for the marked comments, and margin labels for comment
-    /// IDs and section starts.
-    func decorations(current: String?) -> (highlights: [LetterHighlight], labels: [GutterLabel]) {
+    /// IDs and section starts; while editing, carried through the edits so
+    /// far.
+    func decorations(current: String?, edits: [LetterEdit]) -> (highlights: [LetterHighlight], labels: [GutterLabel]) {
         let ids = model.ids
         let letter = model.letter
         var highlights: [LetterHighlight] = []
         var labels: [GutterLabel] = []
         for section in letter.sections {
-            if let a = section.anchor { labels.append(GutterLabel(location: a, text: section.title, isSection: true)) }
+            if let a = section.anchor {
+                labels.append(GutterLabel(location: Remap.map(offset: a, through: edits), text: section.title, isSection: true))
+            }
             for key in section.commentKeys {
                 guard let c = letter.comments[key] else { continue }
-                for (i, r) in c.source.enumerated() {
+                for (i, original) in c.source.enumerated() {
+                    let r = edits.isEmpty ? original : Remap.map(original, through: edits).range
+                    guard r.length > 0 else { continue }
                     highlights.append(LetterHighlight(range: NSRange(location: r.location, length: r.length),
                                                       color: highlightColor(c.triage), strong: key == current))
                     if i == 0 { labels.append(GutterLabel(location: r.location, text: ids[key] ?? "?", isSection: false)) }
@@ -68,7 +78,17 @@ struct LetterActionBar: View {
         @Bindable var model = model
         let sel = model.letterSelection
         HStack(spacing: 10) {
-            if sel.length > 0 {
+            if model.isEditingLetter {
+                Image(systemName: "pencil").foregroundStyle(.tint)
+                Text("Editing the decision letter. Marked comments follow your edits; if you change or delete one's text, you'll be asked what to do.")
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                Spacer()
+                Button("Cancel") { model.cancelEditingLetter() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Done") { model.finishEditingLetter() }
+                    .buttonStyle(.borderedProminent)
+            } else if sel.length > 0 {
                 Text("\(sel.length) characters selected").foregroundStyle(.secondary)
                 Spacer()
                 if !model.letter.sections.isEmpty {
@@ -94,12 +114,16 @@ struct LetterActionBar: View {
                 Spacer()
                 Button("Open Comment") { model.openComment(current) }
                 Button("Remove Comment…") { model.deleteComments([current]) }
+                Button("Edit Letter") { model.beginEditingLetter() }
             } else {
                 Text(model.letter.sections.isEmpty
                      ? "Select a heading such as “Reviewer 1” and choose New Section Here (⇧⌘K)."
                      : "Select a comment's text and choose Mark as Comment (⌘K). Double-click a highlighted comment to open it.")
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
                 Spacer()
+                Button("Edit Letter") { model.beginEditingLetter() }
+                    .help("Edit the decision letter's text; marked comments follow your edits")
             }
         }
         .controlSize(.regular)
@@ -175,6 +199,7 @@ final class LetterNSTextView: NSTextView {
 
 struct LetterTextView: NSViewRepresentable {
     var text: String
+    var isEditing: Bool
     var highlights: [LetterHighlight]
     var labels: [GutterLabel]
     var size: CGFloat
@@ -182,6 +207,8 @@ struct LetterTextView: NSViewRepresentable {
     var revealRevision: Int
     var onSelection: (NSRange) -> Void
     var onDoubleClickComment: (Int) -> Void
+    /// Edits since the last report, and the text after them.
+    var onEdits: ([LetterEdit], String) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -205,6 +232,8 @@ struct LetterTextView: NSViewRepresentable {
         tv.usesFindBar = true
         tv.isIncrementalSearchingEnabled = true
         tv.delegate = context.coordinator
+        tv.textStorage?.delegate = context.coordinator
+        tv.allowsUndo = true
         let scroll = TextScrollView()
         scroll.hasVerticalScroller = true
         scroll.hasHorizontalScroller = false
@@ -233,7 +262,16 @@ struct LetterTextView: NSViewRepresentable {
     }
 
     private func apply(to tv: NSTextView, scroll: NSScrollView, coordinator c: Coordinator, force: Bool) {
+        if force || isEditing != c.isEditing {
+            c.isEditing = isEditing
+            tv.isEditable = isEditing
+            tv.isRichText = false
+            c.undo.removeAllActions()
+            if isEditing && !force { DispatchQueue.main.async { tv.window?.makeFirstResponder(tv) } }
+        }
         if force || text != c.text || size != c.size {
+            c.recording = false
+            defer { c.recording = true }
             let paragraph = NSMutableParagraphStyle()
             paragraph.lineHeightMultiple = 1.15
             tv.textStorage?.setAttributedString(NSAttributedString(string: text, attributes: [
@@ -244,6 +282,12 @@ struct LetterTextView: NSViewRepresentable {
             c.text = text
             c.size = size
             c.highlights = []
+            c.pending = []
+            tv.typingAttributes = [
+                .font: NSFont.systemFont(ofSize: size),
+                .foregroundColor: NSColor.labelColor,
+                .paragraphStyle: paragraph,
+            ]
         }
         if let lm = tv.layoutManager, highlights != c.highlights {
             let full = NSRange(location: 0, length: (tv.string as NSString).length)
@@ -269,12 +313,41 @@ struct LetterTextView: NSViewRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, NSTextViewDelegate {
+    final class Coordinator: NSObject, NSTextViewDelegate, NSTextStorageDelegate {
         var parent: LetterTextView?
         var text = ""
         var size: CGFloat = 0
         var highlights: [LetterHighlight] = []
         var revealRevision = -1
+        var isEditing = false
+        /// Off while the app itself replaces the text.
+        var recording = true
+        var pending: [LetterEdit] = []
+        let undo = UndoManager()
+
+        func undoManager(for view: NSTextView) -> UndoManager? { undo }
+
+        /// Records each edit exactly as the text storage reports it: the
+        /// edited range is in the new text, so the replaced length is the
+        /// edited length minus the change in length.
+        nonisolated func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions,
+                                     range editedRange: NSRange, changeInLength delta: Int) {
+            guard editedMask.contains(.editedCharacters) else { return }
+            let edit = LetterEdit(location: editedRange.location, length: editedRange.length - delta,
+                                  replacementLength: editedRange.length)
+            MainActor.assumeIsolated {
+                guard recording, isEditing else { return }
+                pending.append(edit)
+            }
+        }
+
+        func textDidChange(_ notification: Notification) {
+            guard isEditing, let tv = notification.object as? NSTextView, !pending.isEmpty else { return }
+            let edits = pending
+            pending = []
+            text = tv.string
+            parent?.onEdits(edits, tv.string)
+        }
 
         func textViewDidChangeSelection(_ notification: Notification) {
             guard let tv = notification.object as? NSTextView else { return }

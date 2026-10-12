@@ -64,6 +64,30 @@ IDs are positions, so renumbering is free. The hard part is meaning:
 - After any renumbering a banner lists what changed (RE1-04 → RE1-05…),
   since IDs may already have been quoted in emails to co-authors.
 
+## Editing the decision letter
+
+Edit Letter makes the Decision Letter page editable. Every edit is recorded
+as the text view reports it (where, how much was replaced, by how much), and
+marked comments and section starts are carried through the edits as you
+type, so their highlights and IDs stay on their text. Text typed exactly at
+either end of a comment stays outside it. On Done each comment is one of:
+
+- **untouched**: its text didn't change; it just moved;
+- **found again**: its text was changed or swallowed where it was, but its
+  old wording appears exactly once in the new letter (cut and paste, or a
+  whole new letter pasted over the old): it is re-anchored there, silently;
+- **edited**: its text changed in place. The sheet shows Before and Now and
+  offers: use the new wording as the comment's text (the default if the
+  comment's text was still the marked text), keep the comment's text and mark
+  the new wording (the default if it had been tidied), unmark it, or delete
+  it;
+- **removed**: its text is gone. Keep the comment unmarked (the default), or
+  delete it.
+
+Section starts follow without prompting. The whole edit is one step of
+undo, letter included. Keep Editing returns to the editor with the edits
+intact.
+
 ## Undo
 
 Edit › Undo reverts structural changes field by field: undoing a triage

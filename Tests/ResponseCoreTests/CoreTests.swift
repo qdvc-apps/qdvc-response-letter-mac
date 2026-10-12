@@ -375,3 +375,90 @@ final class ExportTests: XCTestCase {
 extension SourceRange {
     init(_ r: NSRange) { self.init(location: r.location, length: r.length) }
 }
+
+final class LetterRevisionTests: XCTestCase {
+    /// The decision letter, edited by replacing `old` with `new` once.
+    func edit(_ letter: ResponseLetter, _ old: String, _ new: String) -> (String, LetterEdit) {
+        let ns = letter.decisionLetter as NSString
+        let r = ns.range(of: old)
+        precondition(r.location != NSNotFound, old)
+        let text = ns.replacingCharacters(in: r, with: new)
+        return (text, LetterEdit(location: r.location, length: r.length, replacementLength: (new as NSString).length))
+    }
+
+    func sample() throws -> ResponseLetter {
+        let decision = "Dear author,\nSenior Editor\n1. Clarify the theory.\n2. Tighten the discussion.\nReviewer 1\nThe sample is small.\n"
+        var letter = ResponseLetter(decisionLetter: decision)
+        let ns = decision as NSString
+        let se = letter.addSection(role: .seniorEditor, anchor: ns.range(of: "Senior Editor").location)
+        let r1 = letter.addSection(role: .reviewer, number: 1, anchor: ns.range(of: "Reviewer 1").location)
+        for s in ["1. Clarify the theory.", "2. Tighten the discussion."] {
+            try letter.markComment(SourceRange(location: ns.range(of: s).location, length: ns.range(of: s).length), inSection: se)
+        }
+        let r = ns.range(of: "The sample is small.")
+        try letter.markComment(SourceRange(location: r.location, length: r.length), inSection: r1)
+        return letter
+    }
+
+    func testRemapRules() {
+        let r = SourceRange(location: 10, length: 5)        // [10, 15)
+        XCTAssertEqual(Remap.map(r, through: [LetterEdit(location: 2, length: 0, replacementLength: 3)]).range.location, 13)
+        XCTAssertFalse(Remap.map(r, through: [LetterEdit(location: 15, length: 0, replacementLength: 3)]).touched)
+        XCTAssertFalse(Remap.map(r, through: [LetterEdit(location: 10, length: 0, replacementLength: 3)]).touched)
+        let inside = Remap.map(r, through: [LetterEdit(location: 12, length: 1, replacementLength: 4)])
+        XCTAssertTrue(inside.touched)
+        XCTAssertEqual(inside.range, SourceRange(location: 10, length: 8))
+        let gone = Remap.map(r, through: [LetterEdit(location: 8, length: 10, replacementLength: 0)])
+        XCTAssertEqual(gone.range.length, 0)
+        XCTAssertEqual(Remap.map(offset: 10, through: [LetterEdit(location: 10, length: 0, replacementLength: 2)]), 12)
+        XCTAssertEqual(Remap.map(offset: 12, through: [LetterEdit(location: 10, length: 5, replacementLength: 1)]), 10)
+    }
+
+    func testEditsElsewhereJustShift() throws {
+        var letter = try sample()
+        let (text, e) = edit(letter, "Dear author,", "Dear Dr Nguyen and co-authors,")
+        let rev = letter.revision(newText: text, edits: [e])
+        XCTAssertTrue(rev.changes.isEmpty)
+        XCTAssertEqual(rev.shifted, 3)
+        letter.apply(rev)
+        XCTAssertEqual(letter.orderedComments.map { letter.sourceText($0.source[0]) },
+                       ["1. Clarify the theory.", "2. Tighten the discussion.", "The sample is small."])
+        XCTAssertEqual(letter.sourceText(SourceRange(location: letter.sections[1].anchor!, length: 10)), "Reviewer 1")
+    }
+
+    func testEditedAndRemovedComments() throws {
+        var letter = try sample()
+        let keys = letter.orderedCommentKeys
+        letter.comments[keys[1]]?.text = "Tighten the discussion (tidied)."
+        var (text, e1) = edit(letter, "Clarify the theory", "Clarify the theoretical framing")
+        var edited = letter
+        edited.decisionLetter = text
+        let (text2, e2) = edit(edited, "2. Tighten the discussion.\n", "")
+        text = text2
+        let rev = letter.revision(newText: text, edits: [e1, e2])
+        XCTAssertEqual(rev.changes.map(\.kind), [.edited, .removed])
+        XCTAssertEqual(rev.changes[0].newText, "1. Clarify the theoretical framing.")
+        XCTAssertEqual(rev.changes[0].defaultDecision, .useNewText)
+        XCTAssertEqual(rev.changes[1].defaultDecision, .unmark)
+        letter.apply(rev, decisions: [keys[1]: .delete])
+        XCTAssertEqual(letter.comments[keys[0]]?.text, "1. Clarify the theoretical framing.")
+        XCTAssertNil(letter.comments[keys[1]])
+        XCTAssertEqual(letter.sourceText(letter.comments[keys[2]]!.source[0]), "The sample is small.")
+    }
+
+    func testReplacedLetterIsFoundAgain() throws {
+        let letter = try sample()
+        let pasted = "Decision: major revision.\n\nReviewer 1\nThe sample is small.\n\nSenior Editor\n1. Clarify the theory.\n"
+        let all = LetterEdit(location: 0, length: letter.decisionLetter.utf16.count, replacementLength: pasted.utf16.count)
+        let rev = letter.revision(newText: pasted, edits: [all])
+        XCTAssertEqual(rev.relocated.count, 2)
+        XCTAssertEqual(rev.needsAttention.map(\.kind), [.removed])
+        var applied = letter
+        applied.apply(rev)
+        XCTAssertEqual(applied.sourceText(applied.comments[letter.orderedCommentKeys[2]]!.source[0]), "The sample is small.")
+        // Undo restores the letter and the ranges.
+        var undone = applied
+        undone.revert(changesFrom: letter, to: applied)
+        XCTAssertEqual(undone, letter)
+    }
+}

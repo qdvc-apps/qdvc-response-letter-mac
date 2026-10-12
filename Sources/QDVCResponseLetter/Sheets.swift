@@ -426,3 +426,134 @@ struct SettingsView: View {
         .frame(width: 460, height: 440)
     }
 }
+
+// MARK: - After editing the decision letter
+
+/// For each comment whose marked text was changed or deleted: what was
+/// marked, what is there now, and what to do.
+struct LetterRevisionSheet: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    let revision: LetterRevision
+    @State private var decisions: [String: AnchorDecision] = [:]
+
+    var body: some View {
+        let ids = model.ids
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Comments Affected by Your Edits").font(.title2).fontWeight(.semibold)
+            Text(summary).font(.callout).foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(revision.needsAttention) { change in
+                        AnchorChangeRow(change: change, id: ids[change.key] ?? "?",
+                                        hasResponse: !(model.letter.comments[change.key]?.response.isEmpty ?? true),
+                                        decision: Binding(
+                                            get: { decisions[change.key] ?? change.defaultDecision },
+                                            set: { decisions[change.key] = $0 }
+                                        ))
+                    }
+                    if !revision.relocated.isEmpty {
+                        DisclosureGroup("Found again elsewhere (\(revision.relocated.count))") {
+                            Text(revision.relocated.map { ids[$0.key] ?? "?" }.joined(separator: ", "))
+                                .font(.system(.body, design: .monospaced))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, 4)
+                        }
+                        .font(.callout)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            HStack {
+                Spacer()
+                Button("Keep Editing") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Apply") {
+                    model.applyLetterRevision(revision, decisions: decisions)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(20)
+        .frame(width: 680, height: 560)
+        .interactiveDismissDisabled()
+    }
+
+    var summary: String {
+        var parts: [String] = []
+        let edited = revision.needsAttention.filter { $0.kind == .edited }.count
+        let removed = revision.needsAttention.count - edited
+        if edited > 0 { parts.append("\(edited) comment(s) had their marked text changed") }
+        if removed > 0 { parts.append("\(removed) had their marked text deleted") }
+        var text = parts.joined(separator: " and ") + "."
+        if revision.shifted > 0 || !revision.relocated.isEmpty {
+            text += " The rest simply moved with the text"
+            text += revision.relocated.isEmpty ? "." : ", or were found again where their text now is."
+        }
+        return text
+    }
+}
+
+struct AnchorChangeRow: View {
+    let change: AnchorChange
+    let id: String
+    let hasResponse: Bool
+    @Binding var decision: AnchorDecision
+
+    var options: [(AnchorDecision, String)] {
+        let delete = hasResponse ? "Delete the comment and its response" : "Delete the comment"
+        switch change.kind {
+        case .edited:
+            return [
+                (.useNewText, "Use the new wording as the comment's text"),
+                (.keepCommentText, "Keep the comment's text; mark the new wording"),
+                (.unmark, "Keep the comment, no longer marked in the letter"),
+                (.delete, delete),
+            ]
+        case .removed, .relocated:
+            return [(.unmark, "Keep the comment, no longer marked in the letter"), (.delete, delete)]
+        }
+    }
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    CommentID(text: id)
+                    Text(change.kind == .edited ? "Its marked text was changed" : "Its marked text was deleted")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                HStack(alignment: .top, spacing: 12) {
+                    passage("Before", change.oldText)
+                    if change.kind == .edited { passage("Now", change.newText) }
+                }
+                if !change.commentMatchedOldText {
+                    Label("You had edited this comment's text since marking it.", systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Picker("", selection: $decision) {
+                    ForEach(options, id: \.0) { option in Text(option.1).tag(option.0) }
+                }
+                .pickerStyle(.radioGroup)
+                .labelsHidden()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(4)
+        }
+    }
+
+    func passage(_ title: String, _ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text(text)
+                .font(.callout)
+                .lineLimit(8)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}

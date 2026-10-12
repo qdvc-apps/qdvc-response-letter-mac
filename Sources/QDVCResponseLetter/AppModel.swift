@@ -32,6 +32,7 @@ enum SheetKind: Identifiable {
     case splitResolution(SplitResult)
     case exportLetter
     case newVariable(String)
+    case letterRevision(LetterRevision)
 
     var id: String {
         switch self {
@@ -41,6 +42,7 @@ enum SheetKind: Identifiable {
         case .splitResolution(let r): return "split-\(r.secondKey)"
         case .exportLetter: return "export"
         case .newVariable: return "variable"
+        case .letterRevision: return "letter-revision"
         }
     }
 }
@@ -79,6 +81,11 @@ final class AppModel {
     var letterSelection = NSRange(location: 0, length: 0)
     /// The section the next marked comment goes into.
     var letterSectionChoice: String?
+    /// Editing the decision letter: the text so far, and every edit made
+    /// to the saved letter to get there.
+    var isEditingLetter = false
+    var letterDraft = ""
+    var letterEdits: [LetterEdit] = []
     /// A comment to scroll to in the decision letter.
     var revealInLetter: String?
     var revealRevision = 0
@@ -222,6 +229,9 @@ final class AppModel {
         tableSelection = []
         focusedCommentKey = nil
         traceSelection = nil
+        isEditingLetter = false
+        letterDraft = ""
+        letterEdits = []
         selection = letter.sections.isEmpty ? .decisionLetter : .overview
         addRecent(url)
         UserDefaults.standard.set(url.path, forKey: Prefs.last)
@@ -229,6 +239,7 @@ final class AppModel {
 
     func closeWorkspace() {
         flushSaves()
+        isEditingLetter = false
         workspaceURL = nil
         letter = ResponseLetter()
         undoManager?.removeAllActions()
@@ -286,7 +297,8 @@ final class AppModel {
     /// Re-reads the workspace if its files changed outside the app (a Git
     /// pull, another editor).
     func checkForOutsideChanges(force: Bool = false) {
-        guard let url = workspaceURL else { return }
+        // Not while the letter is being edited: the edits are relative to it.
+        guard let url = workspaceURL, !isEditingLetter else { return }
         flushSaves()
         let now = Workspace.stamps(url)
         guard force || now != stamps else { return }
@@ -834,6 +846,74 @@ final class AppModel {
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
         perform("Delete Variable") { $0.deleteVariable(key) }
+    }
+
+    // MARK: - Editing the decision letter
+
+    func beginEditingLetter() {
+        guard isOpen, !isEditingLetter else { return }
+        flushSaves()
+        letterDraft = letter.decisionLetter
+        letterEdits = []
+        letterSelection = NSRange(location: 0, length: 0)
+        isEditingLetter = true
+        selection = .decisionLetter
+    }
+
+    func recordLetterEdits(_ edits: [LetterEdit], text: String) {
+        letterEdits.append(contentsOf: edits)
+        letterDraft = text
+    }
+
+    func cancelEditingLetter() {
+        if letterDraft != letter.decisionLetter {
+            let alert = NSAlert()
+            alert.messageText = "Discard your changes to the decision letter?"
+            alert.addButton(withTitle: "Discard")
+            alert.addButton(withTitle: "Keep Editing")
+            guard alert.runModal() == .alertFirstButtonReturn else { return }
+        }
+        isEditingLetter = false
+        letterDraft = ""
+        letterEdits = []
+    }
+
+    /// Works out what the edits do to the marked comments; applies them at
+    /// once if no comment's text was changed or deleted, otherwise asks.
+    func finishEditingLetter() {
+        guard isEditingLetter else { return }
+        guard letterDraft != letter.decisionLetter else {
+            isEditingLetter = false
+            letterEdits = []
+            return
+        }
+        let revision = letter.revision(newText: letterDraft, edits: letterEdits)
+        if revision.needsAttention.isEmpty {
+            applyLetterRevision(revision, decisions: [:])
+        } else {
+            sheet = .letterRevision(revision)
+        }
+    }
+
+    func applyLetterRevision(_ revision: LetterRevision, decisions: [String: AnchorDecision]) {
+        let before = ids
+        let deleted = revision.needsAttention.filter { (decisions[$0.key] ?? $0.defaultDecision) == .delete }.count
+        perform("Edit Decision Letter") { $0.apply(revision, decisions: decisions) }
+        isEditingLetter = false
+        letterDraft = ""
+        letterEdits = []
+        letterSelection = NSRange(location: 0, length: 0)
+        validateSelection()
+        var parts = ["Decision letter updated."]
+        if revision.shifted > 0 { parts.append("\(revision.shifted) comment(s) moved with the text.") }
+        if !revision.relocated.isEmpty { parts.append("\(revision.relocated.count) found again where their text now is.") }
+        let decided = revision.needsAttention.count - deleted
+        if decided > 0 { parts.append("\(decided) updated as you chose.") }
+        if deleted > 0 { parts.append("\(deleted) deleted.") }
+        show(renumberingText(parts.joined(separator: " "), letter.orderedCommentKeys.compactMap { k in
+            guard let o = before[k], let n = ids[k], o != n else { return nil }
+            return Renumbering(key: k, old: o, new: n)
+        }))
     }
 
     // MARK: - Export

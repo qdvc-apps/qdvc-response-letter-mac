@@ -285,6 +285,7 @@ struct SheetHost: View {
         case .splitResolution(let result): SplitResolutionSheet(result: result)
         case .exportLetter: ExportSheet()
         case .newVariable(let value): NewVariableSheet(value: value)
+        case .letterRevision(let revision): LetterRevisionSheet(revision: revision)
         }
     }
 }
