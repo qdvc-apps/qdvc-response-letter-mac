@@ -141,6 +141,12 @@ view: SwiftUI then delays every single click by the system double-click
 interval (Traceability's cards felt a second slow). Use one tap handler
 that checks `NSApp.currentEvent?.clickCount`, or a Table's `primaryAction`.
 
+The same goes for any page whose main content is a text view (the
+Decision Letter page): measure it with a GeometryReader and give the text
+view, and the bars around it, exactly the measured width; a plain VStack in
+the detail column did not keep the text view to the window's width. Bars of
+buttons use `ViewThatFits` with a compact form.
+
 Text views live in `TextScrollView`, which sets the text view to exactly
 the visible width (and at least the visible height) whenever it tiles, so
 text wraps at the pane's edge. Don't give a text view a starting width:

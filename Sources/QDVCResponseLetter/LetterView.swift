@@ -13,28 +13,38 @@ struct LetterView: View {
         let editing = model.isEditingLetter
         let current = editing ? nil : model.letter.commentKey(atSourceOffset: model.letterSelection.location)
         let deco = decorations(current: current, edits: editing ? model.letterEdits : [])
-        VStack(spacing: 0) {
-            LetterTextView(
-                text: editing ? model.letterDraft : model.letter.decisionLetter,
-                isEditing: editing,
-                highlights: deco.highlights,
-                labels: deco.labels,
-                size: CGFloat(model.editorFontSize),
-                reveal: model.revealInLetter.flatMap { model.letter.comments[$0]?.source.first }
-                    .map { NSRange(location: $0.location, length: $0.length) },
-                revealRevision: model.revealRevision,
-                onSelection: { range in
-                    model.letterSelection = range
-                    if range.length > 0 { model.letterSectionChoice = model.inferredSection(for: range) }
-                },
-                onDoubleClickComment: { offset in
-                    guard !model.isEditingLetter else { return }
-                    if let key = model.letter.commentKey(atSourceOffset: offset) { model.openComment(key) }
-                },
-                onEdits: { edits, text in model.recordLetterEdits(edits, text: text) }
-            )
-            Divider()
-            LetterActionBar(current: current)
+        // Measured, and every part given exactly the width available: the
+        // text view then wraps at the window's edge, and nothing in the bar
+        // below can make the page wider than the window.
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                LetterTextView(
+                    text: editing ? model.letterDraft : model.letter.decisionLetter,
+                    isEditing: editing,
+                    highlights: deco.highlights,
+                    labels: deco.labels,
+                    size: CGFloat(model.editorFontSize),
+                    reveal: model.revealInLetter.flatMap { model.letter.comments[$0]?.source.first }
+                        .map { NSRange(location: $0.location, length: $0.length) },
+                    revealRevision: model.revealRevision,
+                    onSelection: { range in
+                        model.letterSelection = range
+                        if range.length > 0 { model.letterSectionChoice = model.inferredSection(for: range) }
+                    },
+                    onDoubleClickComment: { offset in
+                        guard !model.isEditingLetter else { return }
+                        if let key = model.letter.commentKey(atSourceOffset: offset) { model.openComment(key) }
+                    },
+                    onEdits: { edits, text in model.recordLetterEdits(edits, text: text) }
+                )
+                .frame(width: geo.size.width)
+                .frame(maxHeight: .infinity)
+                Divider()
+                LetterActionBar(current: current)
+                    .frame(width: geo.size.width)
+                    .clipped()
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 
@@ -75,12 +85,27 @@ struct LetterActionBar: View {
     var current: String?
 
     var body: some View {
+        ViewThatFits(in: .horizontal) {
+            bar(compact: false)
+            bar(compact: true)
+        }
+        .controlSize(.regular)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.bar)
+    }
+
+    /// The bar's contents; compact drops the explanations and shortens the
+    /// buttons, for narrow windows.
+    @ViewBuilder
+    func bar(compact: Bool) -> some View {
         @Bindable var model = model
         let sel = model.letterSelection
         HStack(spacing: 10) {
             if model.isEditingLetter {
                 Image(systemName: "pencil").foregroundStyle(.tint)
-                Text("Editing the decision letter. Marked comments follow your edits; if you change or delete one's text, you'll be asked what to do.")
+                Text(compact ? "Editing" : "Editing the decision letter. Marked comments follow your edits; if you change or delete one's text, you'll be asked what to do.")
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                 Spacer()
@@ -89,47 +114,47 @@ struct LetterActionBar: View {
                 Button("Done") { model.finishEditingLetter() }
                     .buttonStyle(.borderedProminent)
             } else if sel.length > 0 {
-                Text("\(sel.length) characters selected").foregroundStyle(.secondary)
+                Text(compact ? "\(sel.length)" : "\(sel.length) characters selected").foregroundStyle(.secondary)
                 Spacer()
                 if !model.letter.sections.isEmpty {
-                    Picker("Add to", selection: $model.letterSectionChoice) {
+                    Picker(compact ? "" : "Add to", selection: $model.letterSectionChoice) {
                         ForEach(model.letter.sections) { s in Text(s.title).tag(Optional(s.key)) }
                     }
                     .frame(maxWidth: 240)
                 }
-                Button("New Section Here…") {
+                Button(compact ? "Section…" : "New Section Here…") {
                     let text = (model.letter.decisionLetter as NSString)
                         .substring(with: NSRange(location: sel.location, length: min(sel.length, 80)))
                     model.sheet = .section(model.newSectionDraft(anchor: sel.location, hint: text))
                 }
                 .help("Start a section (such as Reviewer 1) at the selected heading (⇧⌘K)")
-                Button("Mark as Comment") { model.markComment() }
+                Button(compact ? "Mark" : "Mark as Comment") { model.markComment() }
                     .buttonStyle(.borderedProminent)
                     .disabled(model.letter.sections.isEmpty)
                     .help("Make the selected text a comment (⌘K)")
             } else if let current, let c = model.letter.comments[current] {
                 TriageDot(triage: c.triage)
                 CommentID(text: model.id(current))
-                Text(TextTools.excerpt(c.text, limit: 70)).foregroundStyle(.secondary).lineLimit(1)
+                if !compact {
+                    Text(TextTools.excerpt(c.text, limit: 70)).foregroundStyle(.secondary).lineLimit(1)
+                }
                 Spacer()
-                Button("Open Comment") { model.openComment(current) }
-                Button("Remove Comment…") { model.deleteComments([current]) }
-                Button("Edit Letter") { model.beginEditingLetter() }
+                Button(compact ? "Open" : "Open Comment") { model.openComment(current) }
+                Button(compact ? "Remove…" : "Remove Comment…") { model.deleteComments([current]) }
+                Button(compact ? "Edit" : "Edit Letter") { model.beginEditingLetter() }
             } else {
-                Text(model.letter.sections.isEmpty
-                     ? "Select a heading such as “Reviewer 1” and choose New Section Here (⇧⌘K)."
-                     : "Select a comment's text and choose Mark as Comment (⌘K). Double-click a highlighted comment to open it.")
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                if !compact {
+                    Text(model.letter.sections.isEmpty
+                         ? "Select a heading such as “Reviewer 1” and choose New Section Here (⇧⌘K)."
+                         : "Select a comment's text and choose Mark as Comment (⌘K). Double-click a highlighted comment to open it.")
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
                 Spacer()
-                Button("Edit Letter") { model.beginEditingLetter() }
+                Button(compact ? "Edit" : "Edit Letter") { model.beginEditingLetter() }
                     .help("Edit the decision letter's text; marked comments follow your edits")
             }
         }
-        .controlSize(.regular)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.bar)
     }
 }
 
