@@ -316,11 +316,26 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
         }
     }
 
+    /// Writes the selection to the pasteboard directly: plain text always
+    /// (what pills say, for other apps), and the markup too from a response,
+    /// so pasting into another response keeps formatting and pills.
     override func copy(_ sender: Any?) {
-        guard selectedRange().length > 0 else { return }
+        let range = selectedRange()
+        guard range.length > 0, let storage = textStorage else {
+            NSSound.beep()
+            return
+        }
+        let sub = storage.attributedSubstring(from: range)
         let pboard = NSPasteboard.general
         pboard.clearContents()
-        _ = writeSelection(to: pboard, types: writablePasteboardTypes)
+        if isRichEditor {
+            pboard.declareTypes([.string, .responseMarkup], owner: nil)
+            pboard.setString(MarkupConverter.displayString(sub), forType: .string)
+            pboard.setString(MarkupConverter.richText(sub).markup, forType: .responseMarkup)
+        } else {
+            pboard.declareTypes([.string], owner: nil)
+            pboard.setString(sub.string, forType: .string)
+        }
     }
 
     override func cut(_ sender: Any?) {

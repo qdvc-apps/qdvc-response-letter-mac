@@ -8,6 +8,7 @@ import SwiftUI
 /// and Done asks about any whose text was changed or deleted.
 struct LetterView: View {
     @Environment(AppModel.self) private var model
+    @State private var placed: [PlacedLabel] = []
 
     var body: some View {
         let editing = model.isEditingLetter
@@ -19,25 +20,33 @@ struct LetterView: View {
             VStack(spacing: 0) {
                 ReadableColumn {
                     FillingScroll(padding: 0) {
-                        LetterTextView(
-                            text: editing ? model.letterDraft : model.letter.decisionLetter,
-                            isEditing: editing,
-                            highlights: deco.highlights,
-                            labels: deco.labels,
-                            size: model.textSize,
-                            reveal: model.revealInLetter.flatMap { model.letter.comments[$0]?.source.first }
-                                .map { NSRange(location: $0.location, length: $0.length) },
-                            revealRevision: model.revealRevision,
-                            onSelection: { range in
-                                model.letterSelection = range
-                                if range.length > 0 { model.letterSectionChoice = model.inferredSection(for: range) }
-                            },
-                            onDoubleClickComment: { offset in
-                                guard !model.isEditingLetter else { return }
-                                if let key = model.letter.commentKey(atSourceOffset: offset) { model.openComment(key) }
-                            },
-                            onEdits: { edits, text in model.recordLetterEdits(edits, text: text) }
-                        )
+                        HStack(alignment: .top, spacing: 0) {
+                            LetterMargin(placed: placed, width: 112 * model.textScale)
+                                .frame(maxHeight: .infinity, alignment: .top)
+                            LetterTextView(
+                                text: editing ? model.letterDraft : model.letter.decisionLetter,
+                                isEditing: editing,
+                                highlights: deco.highlights,
+                                labels: deco.labels,
+                                size: model.textSize,
+                                reveal: model.revealInLetter.flatMap { model.letter.comments[$0]?.source.first }
+                                    .map { NSRange(location: $0.location, length: $0.length) },
+                                revealRevision: model.revealRevision,
+                                onSelection: { range in
+                                    model.letterSelection = range
+                                    if range.length > 0 { model.letterSectionChoice = model.inferredSection(for: range) }
+                                },
+                                onDoubleClickComment: { offset in
+                                    guard !model.isEditingLetter else { return }
+                                    if let key = model.letter.commentKey(atSourceOffset: offset) { model.openComment(key) }
+                                },
+                                onEdits: { edits, text in model.recordLetterEdits(edits, text: text) },
+                                onPlaced: { placed = $0 }
+                            )
+                        }
+                        // The margin as tall as the letter, so every ID in it
+                        // can be clicked.
+                        .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .frame(width: geo.size.width)
@@ -61,7 +70,8 @@ struct LetterView: View {
         var labels: [GutterLabel] = []
         for section in letter.sections {
             if let a = section.anchor {
-                labels.append(GutterLabel(location: Remap.map(offset: a, through: edits), text: section.title, isSection: true))
+                labels.append(GutterLabel(location: Remap.map(offset: a, through: edits), text: section.title, isSection: true,
+                                          key: nil))
             }
             for key in section.commentKeys {
                 guard let c = letter.comments[key] else { continue }
@@ -70,7 +80,7 @@ struct LetterView: View {
                     guard r.length > 0 else { continue }
                     highlights.append(LetterHighlight(range: NSRange(location: r.location, length: r.length),
                                                       color: highlightColor(c.triage), strong: key == current))
-                    if i == 0 { labels.append(GutterLabel(location: r.location, text: ids[key] ?? "?", isSection: false)) }
+                    if i == 0 { labels.append(GutterLabel(location: r.location, text: ids[key] ?? "?", isSection: false, key: key)) }
                 }
             }
         }
@@ -171,38 +181,15 @@ struct GutterLabel: Equatable {
     var location: Int
     var text: String
     var isSection: Bool
+    /// The comment, for an ID.
+    var key: String?
 }
 
-/// The decision letter's text view. It is as tall as its text (SwiftUI
-/// scrolls it) and draws the comment IDs and section starts in a margin to
-/// the left of the text, where an NSRulerView used to be.
+/// The decision letter's text view: as tall as its text (SwiftUI scrolls
+/// it). The margin of IDs beside it is a SwiftUI view (LetterMargin), placed
+/// from this view's layout.
 final class LetterNSTextView: NSTextView {
-    static let gutterWidth: CGFloat = 112
-
     var onDoubleClickAt: ((Int) -> Void)?
-    var labels: [GutterLabel] = [] {
-        didSet { if labels != oldValue { needsDisplay = true } }
-    }
-
-    /// The text starts after the margin.
-    override var textContainerOrigin: NSPoint {
-        let o = super.textContainerOrigin
-        return NSPoint(x: o.x + Self.gutterWidth, y: o.y)
-    }
-
-    override func setFrameSize(_ newSize: NSSize) {
-        super.setFrameSize(newSize)
-        updateLineWidth()
-    }
-
-    /// Lines are as wide as the view, less the margin and insets.
-    func updateLineWidth() {
-        guard let container = textContainer else { return }
-        let width = max(1, frame.width - Self.gutterWidth - 2 * textContainerInset.width)
-        if abs(container.containerSize.width - width) > 0.5 {
-            container.containerSize = NSSize(width: width, height: CGFloat.greatestFiniteMagnitude)
-        }
-    }
 
     override func mouseDown(with event: NSEvent) {
         if event.clickCount == 2 {
@@ -212,34 +199,49 @@ final class LetterNSTextView: NSTextView {
         }
         super.mouseDown(with: event)
     }
+}
 
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        guard let lm = layoutManager, !labels.isEmpty else { return }
-        let length = (string as NSString).length
-        guard length > 0 else { return }
-        let origin = textContainerOrigin
-        for label in labels {
-            let ci = max(0, min(label.location, length - 1))
-            let glyph = lm.glyphIndexForCharacter(at: ci)
-            let line = lm.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil)
-            let scale = max(1, (font?.pointSize ?? 13) / 13)
-            let labelFont: NSFont = label.isSection
-                ? .systemFont(ofSize: 10 * scale, weight: .semibold)
-                : .monospacedSystemFont(ofSize: 11 * scale, weight: .medium)
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: labelFont,
-                .foregroundColor: label.isSection ? NSColor.secondaryLabelColor : NSColor.labelColor,
-            ]
-            var text = label.text as NSString
-            if label.isSection, text.length > 14 { text = (text.substring(to: 13) + "…") as NSString }
-            let size = text.size(withAttributes: attrs)
-            // Section names sit just above their first line; IDs level with it.
-            let y = origin.y + line.minY + (label.isSection ? -size.height - 1 : 1)
-            let point = NSPoint(x: Self.gutterWidth - size.width - 10, y: y)
-            guard point.y + size.height >= dirtyRect.minY - 20, point.y <= dirtyRect.maxY + 20 else { continue }
-            text.draw(at: point, withAttributes: attrs)
+/// A margin label placed level with its line.
+struct PlacedLabel: Identifiable, Equatable {
+    var id: String
+    var label: GutterLabel
+    var y: CGFloat
+}
+
+/// The comment IDs and section names, level with their lines; click an ID
+/// to open the comment.
+struct LetterMargin: View {
+    @Environment(AppModel.self) private var model
+    var placed: [PlacedLabel]
+    var width: CGFloat
+
+    var body: some View {
+        let scale = model.textScale
+        ZStack(alignment: .topTrailing) {
+            Color.clear
+            ForEach(placed) { p in
+                Group {
+                    if p.label.isSection {
+                        Text(p.label.text)
+                            .font(.system(size: 10 * scale, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .offset(y: p.y - 15 * scale)
+                    } else {
+                        Button(p.label.text) {
+                            if let key = p.label.key { model.openComment(key) }
+                        }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11 * scale, weight: .medium, design: .monospaced))
+                        .help("Respond to \(p.label.text)")
+                        .offset(y: p.y + 1)
+                    }
+                }
+                .frame(width: width - 12, alignment: .trailing)
+            }
         }
+        .frame(width: width)
     }
 }
 
@@ -255,6 +257,8 @@ struct LetterTextView: NSViewRepresentable {
     var onDoubleClickComment: (Int) -> Void
     /// Edits since the last report, and the text after them.
     var onEdits: ([LetterEdit], String) -> Void
+    /// Where the margin labels go (in the text view's coordinates).
+    var onPlaced: ([PlacedLabel]) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -263,8 +267,7 @@ struct LetterTextView: NSViewRepresentable {
         let layout = NSLayoutManager()
         storage.addLayoutManager(layout)
         let container = NSTextContainer(size: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
-        // The view sets the line width itself (it has a margin).
-        container.widthTracksTextView = false
+        container.widthTracksTextView = true
         layout.addTextContainer(container)
         let tv = LetterNSTextView(frame: .zero, textContainer: container)
         tv.isEditable = false
@@ -291,7 +294,8 @@ struct LetterTextView: NSViewRepresentable {
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: LetterNSTextView, context: Context) -> CGSize? {
         let width = proposedLength(proposal.width, default: 600)
         let offered = proposal.height.flatMap { $0.isFinite ? $0 : nil } ?? 0
-        let height = fittingHeight(of: nsView, width: width, leading: LetterNSTextView.gutterWidth)
+        let height = fittingHeight(of: nsView, width: width)
+        context.coordinator.place(labels, in: nsView)
         return CGSize(width: width, height: max(height, offered))
     }
 
@@ -334,7 +338,7 @@ struct LetterTextView: NSViewRepresentable {
             }
             c.highlights = highlights
         }
-        tv.labels = labels
+        c.place(labels, in: tv)
         if revealRevision != c.revealRevision {
             c.revealRevision = revealRevision
             if let reveal, NSMaxRange(reveal) <= (tv.string as NSString).length {
@@ -359,8 +363,31 @@ struct LetterTextView: NSViewRepresentable {
         var recording = true
         var pending: [LetterEdit] = []
         let undo = UndoManager()
+        var placed: [PlacedLabel] = []
 
         func undoManager(for view: NSTextView) -> UndoManager? { undo }
+
+        /// Works out where each margin label goes, from the laid-out text,
+        /// and reports it when it changes.
+        func place(_ labels: [GutterLabel], in tv: NSTextView) {
+            guard let lm = tv.layoutManager, let tc = tv.textContainer else { return }
+            let length = (tv.string as NSString).length
+            var result: [PlacedLabel] = []
+            if length > 0 {
+                lm.ensureLayout(for: tc)
+                let originY = tv.textContainerInset.height
+                for (i, label) in labels.enumerated() {
+                    let ci = max(0, min(label.location, length - 1))
+                    let glyph = lm.glyphIndexForCharacter(at: ci)
+                    let line = lm.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil)
+                    result.append(PlacedLabel(id: "\(i)-\(label.text)", label: label, y: originY + line.minY))
+                }
+            }
+            guard result != placed else { return }
+            placed = result
+            // Not during a view update.
+            DispatchQueue.main.async { [weak self] in self?.parent?.onPlaced(result) }
+        }
 
         /// Records each edit exactly as the text storage reports it: the
         /// edited range is in the new text, so the replaced length is the

@@ -137,7 +137,9 @@ far wider than the window and their lines ran off the edge). Pane heights
 are remembered in the defaults (`panes.comment`, `panes.openingClosing`).
 
 Text views in the tables handle ⌘C, ⌘X, ⌘V and ⌘A themselves
-(`EditorTextView.performKeyEquivalent`), and the comment's context menu sits
+(`EditorTextView.performKeyEquivalent`); Copy writes the pasteboard
+directly (plain text, plus markup from a response) rather than through
+NSTextView's `writeSelection` machinery, which copied nothing from cells; and the comment's context menu sits
 on the ID cell only: on the whole row, SwiftUI's context menu replaced the
 text views' own Cut / Copy / Paste menu.
 
@@ -167,10 +169,11 @@ re-tiling, explicit line widths). Every text view is instead sized by
 SwiftUI through `sizeThatFits` (the width offered; the height of its text,
 from `fittingHeight(of:width:)`), exactly like “Respond to the comments”'s cells,
 which always wrapped correctly; pages that scroll put it in a SwiftUI
-ScrollView (`FillingScroll`). The decision letter's text view draws its own
-margin of IDs and section names (`LetterNSTextView`, which shifts
-`textContainerOrigin` and sets its line width itself) instead of using an
-NSRulerView.
+ScrollView (`FillingScroll`). The decision letter's margin of IDs and section names is a SwiftUI
+view beside the text view (`LetterMargin`), placed level with the lines from
+the text view's layout (`LetterTextView.Coordinator.place`). Drawing them in
+the text view, in a margin made by overriding `textContainerOrigin`, did not
+show them.
 
 ## 3. Behaviour to preserve (tests)
 
