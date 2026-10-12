@@ -101,10 +101,9 @@ bullets and quote bars. Copy and paste use a private pasteboard type
 carrying markup (plain text for other apps); pasted plain text takes the
 formatting where it lands.
 
-Editors come in two forms: in a scroll view (Opening & Closing) or
-`inline` (the Response Editor's cells), with no scroll view and a
-`sizeThatFits` that lays the text out at the offered width and returns its
-height, so a row grows as you type.
+Editors have no scroll view of their own: `sizeThatFits` lays the text out
+at the offered width and returns its height, so a Response Editor row grows
+as you type, and Opening & Closing scroll them in a `FillingScroll`.
 
 Each editor reports its markup on every change; `updateNSView` reloads
 only when the model's markup differs from what the editor last produced,
@@ -148,12 +147,19 @@ the detail column did not keep the text view to the window's width. Bars of
 buttons use `ViewThatFits` with a compact form.
 
 Pages of running text wrap their content in `ReadableColumn` (centred, at
-most 1000 points). Text views live in `TextScrollView`, which sets the text
-view to exactly the visible width (and at least the visible height) whenever
-it tiles, and sets the text container's line width explicitly rather than
-relying on `widthTracksTextView`, so text wraps at the pane's edge. Don't give a text view a starting width:
-AppKit's autoresizing keeps any difference between it and the scroll view
-(which SwiftUI sizes from zero), and the lines then run off the right.
+most 1000 points, on the text background colour).
+
+**No text view lives in an AppKit scroll view.** Hosted in SwiftUI, an
+NSTextView inside an NSScrollView repeatedly ended up wider than the space
+it was given, whatever the scroll view was told (a starting width,
+re-tiling, explicit line widths). Every text view is instead sized by
+SwiftUI through `sizeThatFits` (the width offered; the height of its text,
+from `fittingHeight(of:width:)`), exactly like the Response Editor's cells,
+which always wrapped correctly; pages that scroll put it in a SwiftUI
+ScrollView (`FillingScroll`). The decision letter's text view draws its own
+margin of IDs and section names (`LetterNSTextView`, which shifts
+`textContainerOrigin` and sets its line width itself) instead of using an
+NSRulerView.
 
 ## 3. Behaviour to preserve (tests)
 

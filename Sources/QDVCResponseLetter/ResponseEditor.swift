@@ -254,7 +254,7 @@ struct ResponseRow: View {
             }
             cell(columns.comment) {
                 PlainTextEditor(
-                    text: comment.text, size: size, placeholder: "The editor's or reviewer's words", inline: true,
+                    text: comment.text, size: size, placeholder: "The editor's or reviewer's words",
                     onChange: { model.setCommentText(key, $0) },
                     onSelectionChange: { range in
                         model.commentCursor = range.length == 0 ? (key, range.location) : nil
@@ -266,7 +266,7 @@ struct ResponseRow: View {
                 cell(columns.ideas) {
                     PlainTextEditor(
                         text: comment.ideas.joined(separator: "\n"), size: size, bulleted: true,
-                        placeholder: "Ideas", inline: true,
+                        placeholder: "Ideas",
                         onChange: { model.setIdeas(key, $0) },
                         onFocus: { _ in model.focusRow(key) }
                     )
@@ -275,7 +275,7 @@ struct ResponseRow: View {
             cell(columns.response, last: true) {
                 RichTextEditor(
                     markup: comment.response, size: size, tokenSignature: model.tokenSignature,
-                    look: { model.look($0) }, placeholder: "Response", inline: true,
+                    look: { model.look($0) }, placeholder: "Response",
                     onChange: { model.setResponse(key, $0) },
                     onFocus: { view in
                         model.activeEditor = view

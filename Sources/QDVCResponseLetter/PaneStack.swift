@@ -118,8 +118,8 @@ struct PaneDivider: View {
 }
 
 /// Long lines are hard to read: a column at most `maxWidth` wide, centred,
-/// with the under-page grey either side (as in Pages and Preview). The
-/// content gets exactly the column's width and the full height.
+/// on the text background colour (white, or black in dark mode) right
+/// across. The content gets exactly the column's width and the full height.
 struct ReadableColumn<Content: View>: View {
     static var standardWidth: CGFloat { 1000 }
 
@@ -128,25 +128,31 @@ struct ReadableColumn<Content: View>: View {
 
     var body: some View {
         GeometryReader { geo in
-            let width = min(geo.size.width, maxWidth)
-            ZStack {
-                Color(nsColor: .underPageBackgroundColor)
+            content()
+                .frame(width: min(geo.size.width, maxWidth), height: geo.size.height)
+                .clipped()
+                .frame(width: geo.size.width, height: geo.size.height)
+                .background(Color(nsColor: .textBackgroundColor))
+        }
+    }
+}
+
+/// A vertical SwiftUI scroll view around a self-sizing text view: the text
+/// view gets exactly the width available (less `padding` either side) and at
+/// least the visible height, so a click anywhere below the text still puts
+/// the cursor in it.
+struct FillingScroll<Content: View>: View {
+    var padding: CGFloat = 10
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        GeometryReader { geo in
+            ScrollView(.vertical) {
                 content()
-                    .frame(width: width, height: geo.size.height)
-                    .background(Color(nsColor: .windowBackgroundColor))
-                    .clipped()
-                    .overlay {
-                        if width < geo.size.width {
-                            HStack {
-                                Rectangle().fill(Color(nsColor: .separatorColor)).frame(width: 1)
-                                Spacer()
-                                Rectangle().fill(Color(nsColor: .separatorColor)).frame(width: 1)
-                            }
-                            .allowsHitTesting(false)
-                        }
-                    }
+                    .frame(width: max(0, geo.size.width - 2 * padding))
+                    .frame(minHeight: geo.size.height, alignment: .top)
+                    .padding(.horizontal, padding)
             }
-            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 }

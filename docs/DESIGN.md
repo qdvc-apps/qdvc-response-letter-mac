@@ -108,8 +108,8 @@ never lost. Typing has its own undo inside each field.
 
 Running text (the decision letter, the opening and the closing) sits in a
 centred column at most 1000 points wide (`ReadableColumn.standardWidth`),
-with the under-page grey either side, as in Pages: very long lines are hard
-to read, however wide the window. The tables (Overview, Triage Editor,
+on the same white (black in dark mode) right across: very long lines are
+hard to read, however wide the window. The tables (Overview, Triage Editor,
 Response Editor) use the full width, since they divide it into columns.
 
 No page may make the window wider. Menus in the format bar have fixed

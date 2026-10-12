@@ -191,13 +191,15 @@ struct TriageInspector: View {
                 }
             }
             Section("Ideas") {
-                PlainTextEditor(
-                    text: c.ideas.joined(separator: "\n"),
-                    size: CGFloat(model.editorFontSize),
-                    bulleted: true,
-                    placeholder: "First ideas, one per line",
-                    onChange: { model.setIdeas(key, $0) }
-                )
+                FillingScroll(padding: 0) {
+                    PlainTextEditor(
+                        text: c.ideas.joined(separator: "\n"),
+                        size: CGFloat(model.editorFontSize),
+                        bulleted: true,
+                        placeholder: "First ideas, one per line",
+                        onChange: { model.setIdeas(key, $0) }
+                    )
+                }
                 .id(key)
                 .frame(height: 150)
             }

@@ -173,6 +173,7 @@ struct OpeningClosingView: View {
                 Pane(title: "Before the table") {
                     FormatBar(editor: { opening.textView })
                 } content: {
+                    FillingScroll {
                     RichTextEditor(
                         markup: model.letter.opening, size: CGFloat(model.editorFontSize),
                         tokenSignature: model.tokenSignature, look: { model.look($0) }, handle: opening,
@@ -180,11 +181,13 @@ struct OpeningClosingView: View {
                         onChange: { model.setOpening($0) }, onFocus: { model.activeEditor = $0 },
                         onTokenDoubleClick: { model.openToken($0) }
                     )
+                    }
                 })),
                 .init(id: "closing", minHeight: 110, weight: 0.4, view: AnyView(
                 Pane(title: "After the table") {
                     FormatBar(editor: { closing.textView })
                 } content: {
+                    FillingScroll {
                     RichTextEditor(
                         markup: model.letter.closing, size: CGFloat(model.editorFontSize),
                         tokenSignature: model.tokenSignature, look: { model.look($0) }, handle: closing,
@@ -192,6 +195,7 @@ struct OpeningClosingView: View {
                         onChange: { model.setClosing($0) }, onFocus: { model.activeEditor = $0 },
                         onTokenDoubleClick: { model.openToken($0) }
                     )
+                    }
                 })),
             ])
         }

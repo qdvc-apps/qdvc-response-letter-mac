@@ -18,25 +18,27 @@ struct LetterView: View {
         GeometryReader { geo in
             VStack(spacing: 0) {
                 ReadableColumn {
-                    LetterTextView(
-                        text: editing ? model.letterDraft : model.letter.decisionLetter,
-                        isEditing: editing,
-                        highlights: deco.highlights,
-                        labels: deco.labels,
-                        size: CGFloat(model.editorFontSize),
-                        reveal: model.revealInLetter.flatMap { model.letter.comments[$0]?.source.first }
-                            .map { NSRange(location: $0.location, length: $0.length) },
-                        revealRevision: model.revealRevision,
-                        onSelection: { range in
-                            model.letterSelection = range
-                            if range.length > 0 { model.letterSectionChoice = model.inferredSection(for: range) }
-                        },
-                        onDoubleClickComment: { offset in
-                            guard !model.isEditingLetter else { return }
-                            if let key = model.letter.commentKey(atSourceOffset: offset) { model.openComment(key) }
-                        },
-                        onEdits: { edits, text in model.recordLetterEdits(edits, text: text) }
-                    )
+                    FillingScroll(padding: 0) {
+                        LetterTextView(
+                            text: editing ? model.letterDraft : model.letter.decisionLetter,
+                            isEditing: editing,
+                            highlights: deco.highlights,
+                            labels: deco.labels,
+                            size: CGFloat(model.editorFontSize),
+                            reveal: model.revealInLetter.flatMap { model.letter.comments[$0]?.source.first }
+                                .map { NSRange(location: $0.location, length: $0.length) },
+                            revealRevision: model.revealRevision,
+                            onSelection: { range in
+                                model.letterSelection = range
+                                if range.length > 0 { model.letterSectionChoice = model.inferredSection(for: range) }
+                            },
+                            onDoubleClickComment: { offset in
+                                guard !model.isEditingLetter else { return }
+                                if let key = model.letter.commentKey(atSourceOffset: offset) { model.openComment(key) }
+                            },
+                            onEdits: { edits, text in model.recordLetterEdits(edits, text: text) }
+                        )
+                    }
                 }
                 .frame(width: geo.size.width)
                 .frame(maxHeight: .infinity)
@@ -171,28 +173,56 @@ struct GutterLabel: Equatable {
     var isSection: Bool
 }
 
-final class LetterGutter: NSRulerView {
+/// The decision letter's text view. It is as tall as its text (SwiftUI
+/// scrolls it) and draws the comment IDs and section starts in a margin to
+/// the left of the text, where an NSRulerView used to be.
+final class LetterNSTextView: NSTextView {
+    static let gutterWidth: CGFloat = 92
+
+    var onDoubleClickAt: ((Int) -> Void)?
     var labels: [GutterLabel] = [] {
         didSet { if labels != oldValue { needsDisplay = true } }
     }
 
-    init(textView: NSTextView, scrollView: NSScrollView) {
-        super.init(scrollView: scrollView, orientation: .verticalRuler)
-        clientView = textView
-        ruleThickness = 92
+    /// The text starts after the margin.
+    override var textContainerOrigin: NSPoint {
+        let o = super.textContainerOrigin
+        return NSPoint(x: o.x + Self.gutterWidth, y: o.y)
     }
 
-    required init(coder: NSCoder) { fatalError("not used") }
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        updateLineWidth()
+    }
 
-    override func drawHashMarksAndLabels(in rect: NSRect) {
-        guard let tv = clientView as? NSTextView, let lm = tv.layoutManager else { return }
-        let length = (tv.string as NSString).length
+    /// Lines are as wide as the view, less the margin and insets.
+    func updateLineWidth() {
+        guard let container = textContainer else { return }
+        let width = max(1, frame.width - Self.gutterWidth - 2 * textContainerInset.width)
+        if abs(container.containerSize.width - width) > 0.5 {
+            container.containerSize = NSSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+        }
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            let point = convert(event.locationInWindow, from: nil)
+            let index = characterIndexForInsertion(at: point)
+            onDoubleClickAt?(index)
+        }
+        super.mouseDown(with: event)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard let lm = layoutManager, !labels.isEmpty else { return }
+        let length = (string as NSString).length
         guard length > 0 else { return }
+        let origin = textContainerOrigin
         for label in labels {
             let ci = max(0, min(label.location, length - 1))
             let glyph = lm.glyphIndexForCharacter(at: ci)
             let line = lm.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil)
-            let y = convert(NSPoint(x: 0, y: line.minY + tv.textContainerOrigin.y), from: tv).y
             let font: NSFont = label.isSection
                 ? .systemFont(ofSize: 10, weight: .semibold)
                 : .monospacedSystemFont(ofSize: 11, weight: .medium)
@@ -203,23 +233,12 @@ final class LetterGutter: NSRulerView {
             var text = label.text as NSString
             if label.isSection, text.length > 14 { text = (text.substring(to: 13) + "…") as NSString }
             let size = text.size(withAttributes: attrs)
-            let point = NSPoint(x: ruleThickness - size.width - 8, y: y + (label.isSection ? -size.height - 1 : 1))
-            guard point.y + size.height >= rect.minY - 20, point.y <= rect.maxY + 20 else { continue }
+            // Section names sit just above their first line; IDs level with it.
+            let y = origin.y + line.minY + (label.isSection ? -size.height - 1 : 1)
+            let point = NSPoint(x: Self.gutterWidth - size.width - 10, y: y)
+            guard point.y + size.height >= dirtyRect.minY - 20, point.y <= dirtyRect.maxY + 20 else { continue }
             text.draw(at: point, withAttributes: attrs)
         }
-    }
-}
-
-final class LetterNSTextView: NSTextView {
-    var onDoubleClickAt: ((Int) -> Void)?
-
-    override func mouseDown(with event: NSEvent) {
-        if event.clickCount == 2 {
-            let point = convert(event.locationInWindow, from: nil)
-            let index = characterIndexForInsertion(at: point)
-            onDoubleClickAt?(index)
-        }
-        super.mouseDown(with: event)
     }
 }
 
@@ -238,60 +257,52 @@ struct LetterTextView: NSViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
-    func makeNSView(context: Context) -> NSScrollView {
+    func makeNSView(context: Context) -> LetterNSTextView {
         let storage = NSTextStorage()
         let layout = NSLayoutManager()
         storage.addLayoutManager(layout)
         let container = NSTextContainer(size: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
-        container.widthTracksTextView = true
+        // The view sets the line width itself (it has a margin).
+        container.widthTracksTextView = false
         layout.addTextContainer(container)
         let tv = LetterNSTextView(frame: .zero, textContainer: container)
         tv.isEditable = false
         tv.isSelectable = true
         tv.isRichText = false
-        tv.minSize = .zero
-        tv.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
-        tv.isVerticallyResizable = true
+        tv.isVerticallyResizable = false
         tv.isHorizontallyResizable = false
-        tv.autoresizingMask = [.width]
-        tv.textContainerInset = NSSize(width: 14, height: 14)
+        tv.autoresizingMask = []
+        tv.drawsBackground = false
+        tv.textContainerInset = NSSize(width: 6, height: 16)
         tv.usesFindBar = true
         tv.isIncrementalSearchingEnabled = true
+        tv.allowsUndo = true
         tv.delegate = context.coordinator
         tv.textStorage?.delegate = context.coordinator
-        tv.allowsUndo = true
-        let scroll = TextScrollView()
-        scroll.hasVerticalScroller = true
-        scroll.hasHorizontalScroller = false
-        scroll.borderType = .noBorder
-        scroll.documentView = tv
-        let gutter = LetterGutter(textView: tv, scrollView: scroll)
-        scroll.verticalRulerView = gutter
-        scroll.hasVerticalRuler = true
-        scroll.rulersVisible = true
         context.coordinator.parent = self
         tv.onDoubleClickAt = { [weak coordinator = context.coordinator] index in
             coordinator?.parent?.onDoubleClickComment(index)
         }
-        apply(to: tv, scroll: scroll, coordinator: context.coordinator, force: true)
-        return scroll
+        apply(to: tv, coordinator: context.coordinator, force: true)
+        return tv
     }
 
-    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSScrollView, context: Context) -> CGSize? {
-        CGSize(width: proposedLength(proposal.width, default: 480), height: proposedLength(proposal.height, default: 300))
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: LetterNSTextView, context: Context) -> CGSize? {
+        let width = proposedLength(proposal.width, default: 600)
+        let offered = proposal.height.flatMap { $0.isFinite ? $0 : nil } ?? 0
+        let height = fittingHeight(of: nsView, width: width, leading: LetterNSTextView.gutterWidth)
+        return CGSize(width: width, height: max(height, offered))
     }
 
-    func updateNSView(_ scroll: NSScrollView, context: Context) {
-        guard let tv = scroll.documentView as? LetterNSTextView else { return }
+    func updateNSView(_ tv: LetterNSTextView, context: Context) {
         context.coordinator.parent = self
-        apply(to: tv, scroll: scroll, coordinator: context.coordinator, force: false)
+        apply(to: tv, coordinator: context.coordinator, force: false)
     }
 
-    private func apply(to tv: NSTextView, scroll: NSScrollView, coordinator c: Coordinator, force: Bool) {
+    private func apply(to tv: LetterNSTextView, coordinator c: Coordinator, force: Bool) {
         if force || isEditing != c.isEditing {
             c.isEditing = isEditing
             tv.isEditable = isEditing
-            tv.isRichText = false
             c.undo.removeAllActions()
             if isEditing && !force { DispatchQueue.main.async { tv.window?.makeFirstResponder(tv) } }
         }
@@ -300,32 +311,29 @@ struct LetterTextView: NSViewRepresentable {
             defer { c.recording = true }
             let paragraph = NSMutableParagraphStyle()
             paragraph.lineHeightMultiple = 1.15
-            tv.textStorage?.setAttributedString(NSAttributedString(string: text, attributes: [
-                .font: NSFont.systemFont(ofSize: size),
-                .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: paragraph,
-            ]))
-            c.text = text
-            c.size = size
-            c.highlights = []
-            c.pending = []
-            tv.typingAttributes = [
+            let attributes: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: size),
                 .foregroundColor: NSColor.labelColor,
                 .paragraphStyle: paragraph,
             ]
+            tv.textStorage?.setAttributedString(NSAttributedString(string: text, attributes: attributes))
+            tv.font = NSFont.systemFont(ofSize: size)
+            tv.typingAttributes = attributes
+            c.text = text
+            c.size = size
+            c.highlights = []
+            c.pending = []
         }
         if let lm = tv.layoutManager, highlights != c.highlights {
             let full = NSRange(location: 0, length: (tv.string as NSString).length)
             lm.removeTemporaryAttribute(.backgroundColor, forCharacterRange: full)
-            lm.removeTemporaryAttribute(.underlineStyle, forCharacterRange: full)
             for h in highlights where NSMaxRange(h.range) <= full.length {
                 lm.addTemporaryAttribute(.backgroundColor, value: h.color.withAlphaComponent(h.strong ? 0.38 : 0.18),
                                          forCharacterRange: h.range)
             }
             c.highlights = highlights
         }
-        (scroll.verticalRulerView as? LetterGutter)?.labels = labels
+        tv.labels = labels
         if revealRevision != c.revealRevision {
             c.revealRevision = revealRevision
             if let reveal, NSMaxRange(reveal) <= (tv.string as NSString).length {
