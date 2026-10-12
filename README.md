@@ -41,7 +41,7 @@ in [docs/DESIGN.md](docs/DESIGN.md).
   each comment's text and choose **Mark as Comment** (⌘K). Marked comments
   are highlighted, with their IDs in the margin; double-click one to open
   it in the Response Editor.
-- **Triage Editor**: ID, triage and ideas for every comment. Triage each
+- **Triage Editor**: ID, comment, triage and ideas for every comment. Triage each
   green (easy), yellow (trickier) or red (needs discussion with
   co-authors); the inspector shows the comment in full, with its triage,
   status, ideas (dot points, one per line) and related comments (link

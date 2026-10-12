@@ -75,15 +75,16 @@ struct OverviewView: View {
 
 // MARK: - Triage Editor
 
-/// Triage at a glance: ID, triage colour and ideas. Select a row and use
-/// the inspector (the comment's full text, triage, status, ideas, related
-/// comments), or press ⌘1–⌘3 on one or more rows.
+/// Triage at a glance: ID, comment, triage colour and ideas. Select a row
+/// and use the inspector (the comment's full text, triage, status, ideas,
+/// related comments), or press ⌘1–⌘3 on one or more rows.
 struct TriageEditorView: View {
     @Environment(AppModel.self) private var model
 
     struct Row: Identifiable {
         var id: String
         var displayID: String
+        var comment: String
         var triage: Triage
         var ideas: String
     }
@@ -94,7 +95,7 @@ struct TriageEditorView: View {
             model.visibleKeys(in: section, ids: ids).compactMap { key -> Row? in
                 guard let c = model.letter.comments[key] else { return nil }
                 let ideas = c.ideas.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-                return Row(id: key, displayID: ids[key] ?? "?", triage: c.triage,
+                return Row(id: key, displayID: ids[key] ?? "?", comment: c.text, triage: c.triage,
                            ideas: ideas.map { "• " + $0 }.joined(separator: "\n"))
             }
         }
@@ -115,6 +116,13 @@ struct TriageEditorView: View {
                 Table(rows, selection: $model.tableSelection) {
                     TableColumn("ID") { r in CommentID(text: r.displayID) }
                         .width(min: 56, ideal: 72, max: 96)
+                    TableColumn("Comment") { r in
+                        Text(r.comment.isEmpty ? "—" : r.comment)
+                            .foregroundStyle(r.comment.isEmpty ? .tertiary : .primary)
+                            .lineLimit(4)
+                            .help(r.comment)
+                    }
+                    .width(min: 200, ideal: 420)
                     TableColumn("Triage") { r in
                         HStack(spacing: 6) {
                             TriageDot(triage: r.triage)

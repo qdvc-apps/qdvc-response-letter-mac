@@ -135,6 +135,11 @@ window (with `VSplitView`, the comment and Opening & Closing panes came out
 far wider than the window and their lines ran off the edge). Pane heights
 are remembered in the defaults (`panes.comment`, `panes.openingClosing`).
 
+Don't pair `.onTapGesture(count: 2)` with a single `.onTapGesture` on one
+view: SwiftUI then delays every single click by the system double-click
+interval (Traceability's cards felt a second slow). Use one tap handler
+that checks `NSApp.currentEvent?.clickCount`, or a Table's `primaryAction`.
+
 Text views live in `TextScrollView`, which sets the text view to exactly
 the visible width (and at least the visible height) whenever it tiles, so
 text wraps at the pane's edge. Don't give a text view a starting width:

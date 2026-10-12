@@ -22,9 +22,9 @@ as they are in the Word document, so neighbouring comments stay in view.
     highlighted (in their triage colour, or the accent colour) and IDs and
     section starts in a margin, like line numbers in a code editor. A bar
     at the bottom offers what makes sense for the selection.
-  - **Triage Editor**: ID, triage and ideas, deliberately sparse; the
-    inspector carries the comment's full text and the triage, status,
-    ideas and related-comment controls. ⌘1–⌘3 work on several rows.
+  - **Triage Editor**: ID, comment (up to four lines; the full text is in
+    the tooltip and the inspector), triage and ideas; the inspector
+    carries the triage, status, ideas and related-comment controls. ⌘1–⌘3 work on several rows.
   - **Response Editor**: the response letter as an editable table, with
     the exported letter's black section bands (aligned with the comment
     column, as in Word). Cells are NSTextViews that size themselves to

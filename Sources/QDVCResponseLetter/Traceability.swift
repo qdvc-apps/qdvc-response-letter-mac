@@ -152,9 +152,17 @@ struct TraceabilityView: View {
                                     .frame(width: Self.card.width, height: Self.card.height)
                                     .opacity(selected == nil || connected.contains(placed.key) ? 1 : 0.35)
                                     .position(placed.center)
-                                    .onTapGesture(count: 2) { model.openComment(placed.key) }
+                                    // One tap handler that reads the click count. A
+                                    // separate double-tap handler would make
+                                    // SwiftUI hold every single click for the
+                                    // system double-click interval before
+                                    // selecting the card.
                                     .onTapGesture {
-                                        model.traceSelection = model.traceSelection == placed.key ? nil : placed.key
+                                        if (NSApp.currentEvent?.clickCount ?? 1) >= 2 {
+                                            model.openComment(placed.key)
+                                        } else {
+                                            model.traceSelection = model.traceSelection == placed.key ? nil : placed.key
+                                        }
                                     }
                                     .contextMenu { CommentContextMenu(keys: [placed.key]) }
                             }
