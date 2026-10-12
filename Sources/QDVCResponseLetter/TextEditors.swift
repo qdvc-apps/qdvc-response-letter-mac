@@ -584,7 +584,12 @@ func editorTextView(in view: NSView) -> EditorTextView? { view as? EditorTextVie
 func fittingHeight(of tv: NSTextView, width: CGFloat, leading: CGFloat = 0) -> CGFloat {
     guard let lm = tv.layoutManager, let tc = tv.textContainer else { return 0 }
     let inset = tv.textContainerInset
-    tc.containerSize = NSSize(width: max(1, width - leading - 2 * inset.width), height: CGFloat.greatestFiniteMagnitude)
+    let lineWidth = max(1, width - leading - 2 * inset.width)
+    // Changing the container's size re-lays out all the text, so only when
+    // the width really changes; otherwise layout is already done and cheap.
+    if abs(tc.containerSize.width - lineWidth) > 0.5 {
+        tc.containerSize = NSSize(width: lineWidth, height: CGFloat.greatestFiniteMagnitude)
+    }
     lm.ensureLayout(for: tc)
     let used = lm.usedRect(for: tc)
     let extra = lm.extraLineFragmentRect

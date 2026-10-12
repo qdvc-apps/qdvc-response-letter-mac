@@ -175,6 +175,15 @@ the text view's layout (`LetterTextView.Coordinator.place`). Drawing them in
 the text view, in a margin made by overriding `textContainerOrigin`, did not
 show them.
 
+`sizeThatFits` is called often, sometimes with no width. A text view's
+must never lay text out at a made-up width or report anything back to
+SwiftUI from there: the decision letter once placed its margin labels at a
+default width during size requests, the labels moved, SwiftUI asked again,
+and the page re-laid itself out continuously (choppy scrolling). The letter
+caches its height by width and text version, measures real widths only, and
+places labels when its frame actually changes; `fittingHeight` changes the
+container's size (which re-lays out all the text) only when the width does.
+
 ## 3. Behaviour to preserve (tests)
 
 - YAML round trips everything the app writes, and reads hand-written YAML.

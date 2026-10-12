@@ -190,6 +190,14 @@ struct GutterLabel: Equatable {
 /// from this view's layout.
 final class LetterNSTextView: NSTextView {
     var onDoubleClickAt: ((Int) -> Void)?
+    /// Called when the view's width changes (the margin labels move).
+    var onWidthChange: (() -> Void)?
+
+    override func setFrameSize(_ newSize: NSSize) {
+        let widthChanged = abs(newSize.width - frame.width) > 0.5
+        super.setFrameSize(newSize)
+        if widthChanged { onWidthChange?() }
+    }
 
     override func mouseDown(with event: NSEvent) {
         if event.clickCount == 2 {
@@ -287,15 +295,28 @@ struct LetterTextView: NSViewRepresentable {
         tv.onDoubleClickAt = { [weak coordinator = context.coordinator] index in
             coordinator?.parent?.onDoubleClickComment(index)
         }
+        tv.onWidthChange = { [weak coordinator = context.coordinator, weak tv] in
+            guard let coordinator, let tv else { return }
+            coordinator.place(coordinator.labels, in: tv, force: true)
+        }
         apply(to: tv, coordinator: context.coordinator, force: true)
         return tv
     }
 
+    /// Measures only real widths (a request with no width gets the last
+    /// answer), and remembers the height until the text or width changes:
+    /// SwiftUI asks often, and laying out a whole letter is not free.
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: LetterNSTextView, context: Context) -> CGSize? {
-        let width = proposedLength(proposal.width, default: 600)
+        let c = context.coordinator
         let offered = proposal.height.flatMap { $0.isFinite ? $0 : nil } ?? 0
+        guard let width = proposal.width, width.isFinite, width > 0 else {
+            return CGSize(width: c.measured?.width ?? 600, height: max(c.measured?.height ?? 600, offered))
+        }
+        if let m = c.measured, abs(m.width - width) < 0.5, m.version == c.version {
+            return CGSize(width: width, height: max(m.height, offered))
+        }
         let height = fittingHeight(of: nsView, width: width)
-        context.coordinator.place(labels, in: nsView)
+        c.measured = (width, c.version, height)
         return CGSize(width: width, height: max(height, offered))
     }
 
@@ -328,6 +349,7 @@ struct LetterTextView: NSViewRepresentable {
             c.size = size
             c.highlights = []
             c.pending = []
+            c.version += 1
         }
         if let lm = tv.layoutManager, highlights != c.highlights {
             let full = NSRange(location: 0, length: (tv.string as NSString).length)
@@ -364,13 +386,29 @@ struct LetterTextView: NSViewRepresentable {
         var pending: [LetterEdit] = []
         let undo = UndoManager()
         var placed: [PlacedLabel] = []
+        /// The labels last placed, and for which text version and width.
+        var labels: [GutterLabel] = []
+        var placedFor: (version: Int, width: CGFloat)?
+        /// Bumped whenever the text changes, to invalidate measurements.
+        var version = 0
+        var measured: (width: CGFloat, version: Int, height: CGFloat)?
 
         func undoManager(for view: NSTextView) -> UndoManager? { undo }
 
-        /// Works out where each margin label goes, from the laid-out text,
-        /// and reports it when it changes.
-        func place(_ labels: [GutterLabel], in tv: NSTextView) {
-            guard let lm = tv.layoutManager, let tc = tv.textContainer else { return }
+        /// Works out where each margin label goes, from the text laid out at
+        /// the view's actual width, and reports it when it changes. Only
+        /// when the labels, the text or the width have changed.
+        func place(_ labels: [GutterLabel], in tv: NSTextView, force: Bool = false) {
+            guard let lm = tv.layoutManager, let tc = tv.textContainer, tv.frame.width > 0 else {
+                self.labels = labels
+                return
+            }
+            let width = tv.frame.width
+            if !force, labels == self.labels, let p = placedFor, p.version == version, abs(p.width - width) < 0.5 {
+                return
+            }
+            self.labels = labels
+            placedFor = (version, width)
             let length = (tv.string as NSString).length
             var result: [PlacedLabel] = []
             if length > 0 {
@@ -408,6 +446,7 @@ struct LetterTextView: NSViewRepresentable {
             let edits = pending
             pending = []
             text = tv.string
+            version += 1
             parent?.onEdits(edits, tv.string)
         }
 
