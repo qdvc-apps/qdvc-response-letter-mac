@@ -121,6 +121,12 @@ Never let a view's content decide the window's width (docs/DESIGN.md
 (give them a width), `sizeThatFits` on every `NSViewRepresentable`, and the
 detail area in a flexible, clipped frame.
 
+Text views live in `TextScrollView`, which sets the text view to exactly
+the visible width (and at least the visible height) whenever it tiles, so
+text wraps at the pane's edge. Don't give a text view a starting width:
+AppKit's autoresizing keeps any difference between it and the scroll view
+(which SwiftUI sizes from zero), and the lines then run off the right.
+
 ## 3. Behaviour to preserve (tests)
 
 - YAML round trips everything the app writes, and reads hand-written YAML.

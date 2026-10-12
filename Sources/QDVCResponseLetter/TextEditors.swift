@@ -478,6 +478,30 @@ final class EditorHandle {
     weak var textView: EditorTextView?
 }
 
+/// A scroll view whose text view is always exactly as wide as the visible
+/// area, so text wraps at the pane's edge, and at least as tall, so a click
+/// anywhere in an empty pane starts typing. (Autoresizing alone keeps
+/// whatever width difference the text view started with: a text view made
+/// 400 points wide inside a scroll view that SwiftUI then sized from zero
+/// stayed 400 points too wide, and its lines ran off the right.)
+final class TextScrollView: NSScrollView {
+    override func tile() {
+        super.tile()
+        guard let tv = documentView as? NSTextView else { return }
+        let size = contentSize
+        if tv.minSize.height != size.height {
+            tv.minSize = NSSize(width: 0, height: size.height)
+        }
+        if abs(tv.frame.width - size.width) > 0.5 || tv.frame.height < size.height {
+            tv.setFrameSize(NSSize(width: size.width, height: max(tv.frame.height, size.height)))
+            if let container = tv.textContainer, let layout = tv.layoutManager {
+                layout.ensureLayout(for: container)
+                tv.sizeToFit()
+            }
+        }
+    }
+}
+
 @MainActor
 func makeEditorScrollView(bulleted: Bool, rich: Bool, size: CGFloat) -> (NSScrollView, EditorTextView) {
     let storage = NSTextStorage()
@@ -488,7 +512,8 @@ func makeEditorScrollView(bulleted: Bool, rich: Bool, size: CGFloat) -> (NSScrol
     let container = NSTextContainer(size: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
     container.widthTracksTextView = true
     layout.addTextContainer(container)
-    let tv = EditorTextView(frame: NSRect(x: 0, y: 0, width: 400, height: 200), textContainer: container)
+    // Zero-sized to start with: TextScrollView gives it the visible width.
+    let tv = EditorTextView(frame: .zero, textContainer: container)
     tv.isRichEditor = rich
     tv.baseSize = size
     tv.minSize = .zero
@@ -514,8 +539,9 @@ func makeEditorScrollView(bulleted: Bool, rich: Bool, size: CGFloat) -> (NSScrol
         : [.font: NSFont.systemFont(ofSize: size), .foregroundColor: NSColor.labelColor, .paragraphStyle: style]
     // One tooltip area over the whole text; it only says something over a pill.
     tv.addToolTip(NSRect(x: 0, y: 0, width: 100_000, height: 1_000_000), owner: tv, userData: nil)
-    let scroll = NSScrollView()
+    let scroll = TextScrollView()
     scroll.hasVerticalScroller = true
+    scroll.hasHorizontalScroller = false
     scroll.borderType = .noBorder
     scroll.drawsBackground = true
     scroll.backgroundColor = .textBackgroundColor

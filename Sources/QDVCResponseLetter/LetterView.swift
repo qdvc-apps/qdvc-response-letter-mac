@@ -192,7 +192,7 @@ struct LetterTextView: NSViewRepresentable {
         let container = NSTextContainer(size: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
         container.widthTracksTextView = true
         layout.addTextContainer(container)
-        let tv = LetterNSTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 400), textContainer: container)
+        let tv = LetterNSTextView(frame: .zero, textContainer: container)
         tv.isEditable = false
         tv.isSelectable = true
         tv.isRichText = false
@@ -205,8 +205,9 @@ struct LetterTextView: NSViewRepresentable {
         tv.usesFindBar = true
         tv.isIncrementalSearchingEnabled = true
         tv.delegate = context.coordinator
-        let scroll = NSScrollView()
+        let scroll = TextScrollView()
         scroll.hasVerticalScroller = true
+        scroll.hasHorizontalScroller = false
         scroll.borderType = .noBorder
         scroll.documentView = tv
         let gutter = LetterGutter(textView: tv, scrollView: scroll)
