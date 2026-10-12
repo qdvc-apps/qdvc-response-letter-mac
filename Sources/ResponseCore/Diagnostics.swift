@@ -133,3 +133,55 @@ extension ResponseLetter {
         return nil
     }
 }
+
+// MARK: - Links between comments (Traceability)
+
+/// A link between two comments: related (no direction), or a
+/// cross-reference from the comment whose response mentions the other.
+public struct CommentLink: Hashable {
+    public enum Kind: Hashable {
+        case related
+        case reference
+        /// A cross-reference still waiting for a decision after a split.
+        case pendingReference
+    }
+
+    public var from: String
+    public var to: String
+    public var kind: Kind
+
+    public init(from: String, to: String, kind: Kind) {
+        self.from = from
+        self.to = to
+        self.kind = kind
+    }
+}
+
+extension ResponseLetter {
+    /// Every link between existing comments, without duplicates; related
+    /// links are given once, from the earlier comment to the later.
+    public func links() -> [CommentLink] {
+        var position: [String: Int] = [:]
+        for (i, k) in orderedCommentKeys.enumerated() { position[k] = i }
+        var seen = Set<CommentLink>()
+        var out: [CommentLink] = []
+        func add(_ link: CommentLink) {
+            if seen.insert(link).inserted { out.append(link) }
+        }
+        for key in orderedCommentKeys {
+            guard let c = comments[key], let pk = position[key] else { continue }
+            for r in c.related {
+                guard let pr = position[r], r != key else { continue }
+                add(pk < pr ? CommentLink(from: key, to: r, kind: .related) : CommentLink(from: r, to: key, kind: .related))
+            }
+            guard c.response.contains("{{ref:") else { continue }
+            for (_, token) in RichText(markup: c.response).tokens {
+                guard case .ref(let keys) = token else { continue }
+                for k in keys where k != key && position[k] != nil {
+                    add(CommentLink(from: key, to: k, kind: keys.count == 1 ? .reference : .pendingReference))
+                }
+            }
+        }
+        return out
+    }
+}

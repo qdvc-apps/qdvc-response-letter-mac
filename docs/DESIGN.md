@@ -8,30 +8,35 @@ folder name, manuscript ID and path. It hands over to the main window when
 a letter opens, and comes back when the letter is closed. Opening a letter
 from the File menu works from either window.
 
-The main window is a three-column window in the Mail/Notes/Xcode mould: a sidebar, the page or
-comment being worked on, and an inspector (⌥⌘I), using standard
-NavigationSplitView, toolbar, search field and inspector, so the app picks
-up Liquid Glass on macOS 26 without custom chrome.
+The main window has a sidebar, the page and an inspector (⌥⌘I), using
+standard NavigationSplitView, toolbar, search field and inspector, so the
+app picks up Liquid Glass on macOS 26 without custom chrome.
 
-The sidebar has five pages, then every section with its comments (a triage
-dot, the ID, the start of the comment, a warning if its response has a
-problem, and a status icon). Sections fold, show "final of total", and are
-edited from their heading's context menu; comments are dragged to reorder.
-A progress bar sits at the bottom (drafted counts half).
+The sidebar lists pages, not comments: comments are worked on in tables,
+as they are in the Word document, so neighbouring comments stay in view.
 
-- **Overview**: every comment in one table, for triage. Multi-select and
-  colour with ⌘1–⌘3, like labels in Finder.
-- **Decision Letter**: the letter, read-only, with marked comments
-  highlighted (in their triage colour, or the accent colour) and IDs and
-  section starts in a margin, like line numbers in a code editor. A bar at
-  the bottom offers what makes sense for the selection: mark it, start a
-  section there, or open the comment under the cursor.
-- **Opening & Closing**, **Variables** (a table; the value is edited in
-  place), **Issues** (with the split decisions inline).
-- **A comment**: a header with the ID, triage dots and a status control,
-  then three resizable panes: the comment (plain text: Join Wrapped Lines,
-  Split Here, Merge with Next), the ideas (one bullet per line) and the
-  response (rich text with a format bar).
+- **Response Letter › Overview**: a read-only table of every comment, for
+  orientation; the inspector opens a row in either editor.
+- **Workflow**, in the order of the work:
+  - **Decision Letter**: the letter, read-only, with marked comments
+    highlighted (in their triage colour, or the accent colour) and IDs and
+    section starts in a margin, like line numbers in a code editor. A bar
+    at the bottom offers what makes sense for the selection.
+  - **Triage Editor**: ID, triage and ideas, deliberately sparse; the
+    inspector carries the comment's full text and the triage, status,
+    ideas and related-comment controls. ⌘1–⌘3 work on several rows.
+  - **Response Editor**: the response letter as an editable table, with
+    the exported letter's black section bands (aligned with the comment
+    column, as in Word). Cells are NSTextViews that size themselves to
+    their text; the row takes the height of its tallest cell. One format
+    bar acts on the response being edited.
+  - **Opening & Closing**.
+- **Tools**: Variables, Issues, and Traceability, a map in the spirit of
+  network topology views (UniFi, Loopback, AirPort Utility): one invisible
+  layer per section, cards ordered within a layer to sit near what they
+  link to (a barycentre heuristic, so lines stay short and seldom cross),
+  solid lines for related comments and dashed arrows for
+  cross-references. Selecting a card dims everything it isn't linked to.
 
 ## Terminology
 

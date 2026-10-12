@@ -20,61 +20,86 @@ open a response letter on the left and lists recent ones on the right
 Turn it off in Settings to reopen the last letter instead; Window › Welcome
 to QDVC Response Letter (⇧⌘1) brings it back at any time.
 
-The main window has a sidebar (pages, then every section and its comments), the
-page or comment you are working on, and an inspector (⌥⌘I). The layout and
-its precedents in Mail, Notes and Xcode are explained in
-[docs/DESIGN.md](docs/DESIGN.md).
+The main window has a sidebar of pages, the page itself, and an inspector
+(⌥⌘I) for the selected comment. The layout and its precedents are explained
+in [docs/DESIGN.md](docs/DESIGN.md).
 
-- **Start from the decision letter** (File › New Response Letter, ⌘N):
-  paste it as plain text and choose where to keep the folder.
-- **Mark it up** in the Decision Letter page. Select a heading such as
-  "Reviewer #1" and choose **New Section Here** (⇧⌘K); the app suggests
-  the role, title and ID prefix (SE, AE, SIE, DE, TC, RE1, RE2…). Then select
+**Response Letter**
+
+- **Overview**: every comment in one table (ID, triage, status, comment,
+  ideas, response). Select rows and press ⌘1–⌘3 to triage (⌘0 clears) or
+  ⌥⌘1–⌥⌘3 to set the status; the inspector opens the selected comment in
+  the Triage Editor or the Response Editor; double-click opens it in the
+  Response Editor.
+
+**Workflow**
+
+- **Decision Letter**: paste the decision letter when you start a response
+  letter (File › New Response Letter, ⌘N). Select a heading such as
+  "Reviewer #1" and choose **New Section Here** (⇧⌘K); the app suggests the
+  role, title and ID prefix (SE, AE, SIE, DE, TC, RE1, RE2…). Then select
   each comment's text and choose **Mark as Comment** (⌘K). Marked comments
   are highlighted, with their IDs in the margin; double-click one to open
-  it. Comments can also be typed in directly (Comment › New Comment).
-- **Triage** each comment green (easy), yellow (trickier) or red (needs
-  discussion with co-authors), and give it a status: to do, drafted or
-  final. The Overview page lists every comment in one table: select rows
-  and press ⌘1–⌘3 (⌘0 clears) or ⌥⌘1–⌥⌘3. Filter by triage and status
-  from the toolbar, and search from the sidebar.
-- **Ideas:** dot points of first thoughts for each response, one per line.
-- **Related comments** (inspector): link comments that ask for the same
-  thing, such as an associate editor summarising two reviewers. Links work
-  both ways.
-- **Draft responses** with bold (⌘B), italic (⌘I), quoted manuscript text
-  (⌘') and bullets (⇧⌘7), plus two kinds of linked text, shown as pills:
+  it in the Response Editor.
+- **Triage Editor**: ID, triage and ideas for every comment. Triage each
+  green (easy), yellow (trickier) or red (needs discussion with
+  co-authors); the inspector shows the comment in full, with its triage,
+  status, ideas (dot points, one per line) and related comments (link
+  comments that ask for the same thing, such as an associate editor
+  summarising two reviewers).
+- **Response Editor**: the whole response letter as one table, as in a
+  word processor, so neighbouring comments stay in view. Black bands start
+  each section; every cell (comment, ideas, response) is shown in full and
+  edited in place, and rows grow as you type. Hide the triage, status or
+  ideas columns from Columns. Responses have bold (⌘B), italic (⌘I),
+  quoted manuscript text (⌘') and bullets (⇧⌘7), plus two kinds of linked
+  text, shown as pills:
   - **Variables**: text with one official version, such as a page
     number, a word count or a sentence quoted from the revised manuscript.
     Change it once in the Variables page and every use changes. Select text
     and choose Variable › New Variable from Selection to make one.
   - **Cross-references** to other comments ("see our response to AE-03"),
     which always show the comment's current ID.
-- **Split and merge** comments (⌥⌘D splits at the insertion point in the
-  comment's text; ⌥⌘J merges with the next). Comments renumber themselves
-  and cross-references follow. After a split, the app asks, for each
-  cross-reference to the original comment, which part it now means (or
-  both), and which parts the related comments relate to. Anything left
-  undecided is flagged as an orange pill and in Issues.
-- **Issues** collects what needs a look: undecided, broken (to a deleted
-  comment) and duplicated cross-references; deleted, empty and unused
-  Variables; and comments marked final with no response.
 - **Opening & Closing**: the text before and after the table ("Dear
   Professor…").
-- **Export** (⇧⌘E) an A4 Word document: the title, the opening, the table
-  (a blank ID heading, then the comments and responses in two columns of
-  equal width, with a black band and a bold white heading such as
-  "Reviewer 1 comments" at the start of each section; the header row
-  appears once, at the top) and the closing, with page numbers. Quoted text
-  and bullets use Word's Quote and List Bullet styles, so they can be
-  restyled in Word. The font, size and quote style are in Letter Settings
-  (⌥⌘L), as is the ID style (separator and digits: RE1-01, RE1.1…).
-- **Export for Co-authors** (⌥⇧⌘E): landscape A4, with each comment's
-  triage colour, status, ideas, related comments and draft response, and a
-  summary of progress. **Export Comments as CSV** for spreadsheets.
-- **Undo** (⌘Z) covers marking, splitting, merging, deleting, moving,
-  triage, status, related comments and Variables. Typing is undone in the
-  field you are typing in.
+
+Comments can be split and merged (⌥⌘D splits at the insertion point in a
+comment's text; ⌥⌘J merges with the next). They renumber themselves and
+cross-references follow. After a split, the app asks, for each
+cross-reference to the original comment, which part it now means (or both),
+and which parts the related comments relate to. Anything left undecided is
+flagged as an orange pill and in Issues. Right-click a comment's ID for
+moving, merging and deleting; right-click a section band to edit, move or
+delete the section.
+
+**Tools**
+
+- **Variables**: the table of Variables; edit a value and it changes
+  everywhere.
+- **Issues**: undecided, broken (to a deleted comment) and duplicated
+  cross-references; deleted, empty and unused Variables; comments marked
+  final with no response.
+- **Traceability**: a map of how comments are linked, like a network
+  topology view. Each section is a layer (editors above reviewers), each
+  linked comment a card; solid lines join related comments and dashed
+  arrows run from a response that mentions a comment to that comment.
+  Click a card to highlight its links; double-click to open it.
+
+**Export** (⇧⌘E) an A4 Word document: the title, the opening, the table (a
+blank ID heading, then the comments and responses in two columns of equal
+width, with a black band and a bold white heading such as "Reviewer 1
+comments" at the start of each section; the header row appears once, at the
+top) and the closing, with page numbers. Quoted text and bullets use Word's
+Quote and List Bullet styles, so they can be restyled in Word. The font,
+size and quote style are in Letter Settings (⌥⌘L), as is the ID style
+(separator and digits: RE1-01, RE1.1…). **Export for Co-authors**
+(⌥⇧⌘E): landscape A4, with each comment's triage colour, status, ideas,
+related comments and draft response, and a summary of progress. **Export
+Comments as CSV** for spreadsheets.
+
+**Undo** (⌘Z) covers marking, splitting, merging, deleting, moving, triage,
+status, related comments and Variables. Typing is undone in the field you
+are typing in.
 
 ## Requirements
 
@@ -173,9 +198,9 @@ not with `swift run`.
 | ⌥⌘D | Split the comment at the insertion point |
 | ⌥⌘J | Merge with the next comment |
 | ⌥⌘↑ / ⌥⌘↓ | Move the comment up / down |
-| ⌘[ / ⌘] | Previous / next comment |
+| ⌘[ / ⌘] | Previous / next comment (on the current page) |
 | ⌘B ⌘I ⌘' ⇧⌘7 | Bold, italic, quoted text, bullets |
-| ⌃⌘1 … ⌃⌘5 | Overview, Decision Letter, Opening & Closing, Variables, Issues |
+| ⌃⌘1 … ⌃⌘8 | Overview, Decision Letter, Triage Editor, Response Editor, Opening & Closing, Variables, Issues, Traceability |
 | ⌥⌘I | Show or hide the inspector |
 | ⇧⌘E / ⌥⇧⌘E | Export the response letter / the co-author version |
 | ⌥⌘L | Letter Settings |

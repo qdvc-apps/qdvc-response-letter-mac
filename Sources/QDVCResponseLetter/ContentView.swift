@@ -59,7 +59,7 @@ struct MainView: View {
         @Bindable var model = model
         NavigationSplitView {
             SidebarView()
-                .navigationSplitViewColumnWidth(min: 230, ideal: 290, max: 420)
+                .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 320)
         } detail: {
             DetailView()
                 .safeAreaInset(edge: .top, spacing: 0) {
@@ -70,9 +70,9 @@ struct MainView: View {
         }
         .inspector(isPresented: $model.showInspector) {
             InspectorView()
-                .inspectorColumnWidth(min: 240, ideal: 290, max: 400)
+                .inspectorColumnWidth(min: 240, ideal: 300, max: 440)
         }
-        .searchable(text: $model.searchText, placement: .sidebar, prompt: "Search comments")
+        .searchable(text: $model.searchText, placement: .toolbar, prompt: "Search comments")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 FilterMenu()
@@ -128,118 +128,44 @@ struct FilterMenu: View {
 
 // MARK: - Sidebar
 
+/// The pages, in the order of the work: the decision letter, triage,
+/// responses, the opening and closing; then tools.
 struct SidebarView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
         @Bindable var model = model
-        let ids = model.ids
-        let issues = model.issues
-        let issueCount = issues.count
-        let flagged = Set(issues.filter(\.kind.isBlocking).compactMap(\.commentKey))
+        let issueCount = model.issues.count
+        let p = model.letter.progress()
         List(selection: $model.selection) {
             Section("Response Letter") {
                 Label("Overview", systemImage: "tablecells").tag(SidebarItem.overview)
+            }
+            Section("Workflow") {
                 Label("Decision Letter", systemImage: "doc.plaintext").tag(SidebarItem.decisionLetter)
+                Label("Triage Editor", systemImage: "flag")
+                    .badge(p.count(.none))
+                    .help("\(p.count(.none)) comment(s) not yet triaged")
+                    .tag(SidebarItem.triageEditor)
+                Label("Response Editor", systemImage: "text.bubble")
+                    .badge(p.count(.todo))
+                    .help("\(p.count(.todo)) response(s) still to do")
+                    .tag(SidebarItem.responseEditor)
                 Label("Opening & Closing", systemImage: "text.alignleft").tag(SidebarItem.openingClosing)
+            }
+            Section("Tools") {
                 Label("Variables", systemImage: "curlybraces")
                     .badge(model.letter.variables.count)
                     .tag(SidebarItem.variables)
                 Label("Issues", systemImage: issueCount == 0 ? "checkmark.seal" : "exclamationmark.triangle")
                     .badge(issueCount)
                     .tag(SidebarItem.issues)
-            }
-            ForEach(model.letter.sections) { section in
-                Section(isExpanded: Binding(
-                    get: { !model.collapsedSections.contains(section.key) },
-                    set: { open in
-                        if open { model.collapsedSections.remove(section.key) } else { model.collapsedSections.insert(section.key) }
-                    }
-                )) {
-                    ForEach(model.visibleKeys(in: section, ids: ids), id: \.self) { key in
-                        if let c = model.letter.comments[key] {
-                            CommentRow(comment: c, id: ids[key] ?? "?", flagged: flagged.contains(key))
-                                .tag(SidebarItem.comment(key))
-                                .contextMenu { CommentContextMenu(keys: [key]) }
-                        }
-                    }
-                    .onMove(perform: model.isFiltering ? nil : { from, to in
-                        model.moveComments(inSection: section.key, from: from, to: to)
-                    })
-                } header: {
-                    SectionHeader(section: section)
-                }
+                Label("Traceability", systemImage: "point.3.connected.trianglepath.dotted")
+                    .tag(SidebarItem.traceability)
             }
         }
         .listStyle(.sidebar)
         .safeAreaInset(edge: .bottom, spacing: 0) { ProgressFooter() }
-        .overlay {
-            if model.letter.sections.isEmpty {
-                VStack(spacing: 6) {
-                    Spacer()
-                    Text("No sections yet").font(.headline)
-                    Text("Open the Decision Letter, select a heading such as “Reviewer 1” and choose Comment › New Section Here.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                    Spacer()
-                }
-                .padding()
-                .allowsHitTesting(false)
-            }
-        }
-    }
-}
-
-struct SectionHeader: View {
-    @Environment(AppModel.self) private var model
-    var section: LetterSection
-
-    var body: some View {
-        let p = model.letter.progress(keys: section.commentKeys)
-        HStack {
-            Text(section.title)
-            Spacer()
-            if p.total > 0 {
-                Text("\(p.count(.final))/\(p.total)")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .help("\(p.count(.final)) of \(p.total) responses final")
-            }
-        }
-        .contextMenu {
-            Button("Edit Section…") { model.editSection(section.key) }
-            Button("New Comment in \(section.title)") { model.newComment(inSection: section.key) }
-            Divider()
-            Button("Move Section Up") { model.moveSection(section.key, by: -1) }
-            Button("Move Section Down") { model.moveSection(section.key, by: 1) }
-            Divider()
-            Button("Delete Section…") { model.deleteSection(section.key) }
-        }
-    }
-}
-
-struct CommentRow: View {
-    var comment: Comment
-    var id: String
-    var flagged: Bool
-
-    var body: some View {
-        HStack(spacing: 8) {
-            TriageDot(triage: comment.triage)
-            CommentID(text: id)
-            Text(TextTools.excerpt(comment.text, limit: 80))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-            Spacer(minLength: 2)
-            if flagged {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-                    .help("This comment's response has a problem; see Issues.")
-            }
-            StatusIcon(status: comment.status)
-        }
     }
 }
 
@@ -270,7 +196,12 @@ struct CommentContextMenu: View {
 
     var body: some View {
         if keys.count == 1, let key = keys.first {
-            Button("Open") { model.openComment(key) }
+            if model.selection != .responseEditor {
+                Button("Open in Response Editor") { model.openComment(key) }
+            }
+            if model.selection != .triageEditor {
+                Button("Open in Triage Editor") { model.openInTriage(key) }
+            }
             if model.letter.comments[key]?.source.isEmpty == false {
                 Button("Show in Decision Letter") {
                     model.selection = .decisionLetter
@@ -311,7 +242,7 @@ struct DetailView: View {
 
     var body: some View {
         page
-            .frame(minWidth: 360, maxWidth: .infinity, minHeight: 300, maxHeight: .infinity)
+            .frame(minWidth: 300, maxWidth: .infinity, minHeight: 300, maxHeight: .infinity)
             .clipped()
     }
 
@@ -322,18 +253,18 @@ struct DetailView: View {
             OverviewView()
         case .decisionLetter?:
             LetterView()
+        case .triageEditor?:
+            TriageEditorView()
+        case .responseEditor?:
+            ResponseEditorView()
+        case .traceability?:
+            TraceabilityView()
         case .openingClosing?:
             OpeningClosingView()
         case .variables?:
             VariablesView()
         case .issues?:
             IssuesView()
-        case .comment(let key)?:
-            if model.letter.comments[key] != nil {
-                CommentDetailView(key: key).id(key)
-            } else {
-                ContentUnavailableView("Comment not found", systemImage: "questionmark.square.dashed")
-            }
         case nil:
             ContentUnavailableView("Nothing selected", systemImage: "sidebar.left",
                                    description: Text("Choose a comment or a page in the sidebar."))

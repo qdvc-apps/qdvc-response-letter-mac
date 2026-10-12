@@ -260,6 +260,20 @@ final class EditingTests: XCTestCase {
         _ = result
     }
 
+    func testLinks() throws {
+        var letter = try sampleLetter()
+        let a = letter.orderedComments[0].key
+        let b = letter.orderedComments[1].key
+        let r = letter.orderedComments[2].key
+        letter.setRelated(r, a, true)
+        letter.comments[r]?.response = "See {{ref:\(a)}}, {{ref:\(a)}} and {{ref:\(r)}}."
+        letter.comments[b]?.response = "Pending {{ref:\(a)|\(r)}}."
+        let links = letter.links()
+        XCTAssertEqual(links.filter { $0.kind == .related }, [CommentLink(from: a, to: r, kind: .related)])
+        XCTAssertEqual(links.filter { $0.kind == .reference }, [CommentLink(from: r, to: a, kind: .reference)])
+        XCTAssertEqual(links.filter { $0.kind == .pendingReference }.count, 2)
+    }
+
     func testUnwrap() {
         let text = "This is a hard-\nwrapped line\nthat continues.\n\n1. A list item\n2. Another\n\n\nEnd"
         XCTAssertEqual(TextTools.unwrap(text), "This is a hard- wrapped line that continues.\n\n1. A list item\n2. Another\n\nEnd")

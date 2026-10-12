@@ -47,7 +47,7 @@ struct OverviewView: View {
                 Button("Open Decision Letter") { model.selection = .decisionLetter }
             }
         } else {
-            Table(rows, selection: $model.overviewSelection) {
+            Table(rows, selection: $model.tableSelection) {
                 TableColumn("ID") { r in CommentID(text: r.displayID) }
                     .width(min: 56, ideal: 70, max: 90)
                 TableColumn("Triage") { r in TriageDot(triage: r.triage).help(r.triage.label) }
@@ -73,6 +73,84 @@ struct OverviewView: View {
     }
 }
 
+// MARK: - Triage Editor
+
+/// Triage at a glance: ID, triage colour and ideas. Select a row and use
+/// the inspector (the comment's full text, triage, status, ideas, related
+/// comments), or press ⌘1–⌘3 on one or more rows.
+struct TriageEditorView: View {
+    @Environment(AppModel.self) private var model
+
+    struct Row: Identifiable {
+        var id: String
+        var displayID: String
+        var triage: Triage
+        var ideas: String
+    }
+
+    var rows: [Row] {
+        let ids = model.ids
+        return model.letter.sections.flatMap { section in
+            model.visibleKeys(in: section, ids: ids).compactMap { key -> Row? in
+                guard let c = model.letter.comments[key] else { return nil }
+                let ideas = c.ideas.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                return Row(id: key, displayID: ids[key] ?? "?", triage: c.triage,
+                           ideas: ideas.map { "• " + $0 }.joined(separator: "\n"))
+            }
+        }
+    }
+
+    var body: some View {
+        @Bindable var model = model
+        if model.letter.orderedCommentKeys.isEmpty {
+            ContentUnavailableView {
+                Label("No comments yet", systemImage: "flag")
+            } description: {
+                Text("Mark the editors' and reviewers' comments in the decision letter first.")
+            } actions: {
+                Button("Open Decision Letter") { model.selection = .decisionLetter }
+            }
+        } else {
+            VStack(spacing: 0) {
+                Table(rows, selection: $model.tableSelection) {
+                    TableColumn("ID") { r in CommentID(text: r.displayID) }
+                        .width(min: 56, ideal: 72, max: 96)
+                    TableColumn("Triage") { r in
+                        HStack(spacing: 6) {
+                            TriageDot(triage: r.triage)
+                            Text(r.triage.label).foregroundStyle(r.triage == .none ? .secondary : .primary)
+                        }
+                    }
+                    .width(min: 110, ideal: 150, max: 200)
+                    TableColumn("Ideas") { r in
+                        Text(r.ideas.isEmpty ? "—" : r.ideas)
+                            .foregroundStyle(r.ideas.isEmpty ? .tertiary : .primary)
+                            .lineLimit(4)
+                    }
+                }
+                .contextMenu(forSelectionType: String.self) { keys in
+                    CommentContextMenu(keys: model.letter.orderedCommentKeys.filter { keys.contains($0) })
+                } primaryAction: { keys in
+                    if let first = model.letter.orderedCommentKeys.first(where: { keys.contains($0) }) {
+                        model.openComment(first)
+                    }
+                }
+                Divider()
+                HStack {
+                    let p = model.letter.progress()
+                    Text("⌘1 easy · ⌘2 trickier · ⌘3 needs discussion · ⌘0 clear. Double-click to open in the Response Editor.")
+                    Spacer()
+                    Text("\(p.total - p.count(.none)) of \(p.total) triaged").monospacedDigit()
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+            }
+        }
+    }
+}
+
 // MARK: - Opening and closing
 
 struct OpeningClosingView: View {
@@ -84,7 +162,7 @@ struct OpeningClosingView: View {
         PaneStack(storageKey: "openingClosing", items: [
             .init(id: "opening", minHeight: 140, weight: 0.6, view: AnyView(
             Pane(title: "Before the table") {
-                FormatBar(handle: opening)
+                FormatBar(editor: { opening.textView })
             } content: {
                 RichTextEditor(
                     markup: model.letter.opening, size: CGFloat(model.editorFontSize),
@@ -96,7 +174,7 @@ struct OpeningClosingView: View {
             })),
             .init(id: "closing", minHeight: 110, weight: 0.4, view: AnyView(
             Pane(title: "After the table") {
-                FormatBar(handle: closing)
+                FormatBar(editor: { closing.textView })
             } content: {
                 RichTextEditor(
                     markup: model.letter.closing, size: CGFloat(model.editorFontSize),

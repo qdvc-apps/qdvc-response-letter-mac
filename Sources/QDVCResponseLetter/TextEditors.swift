@@ -502,8 +502,9 @@ final class TextScrollView: NSScrollView {
     }
 }
 
+/// A configured editor text view (TextKit 1, with MarkupLayoutManager).
 @MainActor
-func makeEditorScrollView(bulleted: Bool, rich: Bool, size: CGFloat) -> (NSScrollView, EditorTextView) {
+func makeEditorTextView(bulleted: Bool, rich: Bool, size: CGFloat, inline: Bool) -> EditorTextView {
     let storage = NSTextStorage()
     let layout = MarkupLayoutManager()
     layout.allBullets = bulleted
@@ -512,24 +513,33 @@ func makeEditorScrollView(bulleted: Bool, rich: Bool, size: CGFloat) -> (NSScrol
     let container = NSTextContainer(size: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
     container.widthTracksTextView = true
     layout.addTextContainer(container)
-    // Zero-sized to start with: TextScrollView gives it the visible width.
+    // Zero-sized to start with: TextScrollView, or SwiftUI for inline
+    // editors, gives it its size.
     let tv = EditorTextView(frame: .zero, textContainer: container)
     tv.isRichEditor = rich
     tv.baseSize = size
     tv.minSize = .zero
     tv.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
-    tv.isVerticallyResizable = true
     tv.isHorizontallyResizable = false
-    tv.autoresizingMask = [.width]
-    tv.textContainerInset = NSSize(width: 8, height: 8)
+    if inline {
+        // Sized by SwiftUI from sizeThatFits: as tall as its text.
+        tv.isVerticallyResizable = false
+        tv.autoresizingMask = []
+        tv.textContainerInset = NSSize(width: 3, height: 6)
+        tv.drawsBackground = false
+    } else {
+        tv.isVerticallyResizable = true
+        tv.autoresizingMask = [.width]
+        tv.textContainerInset = NSSize(width: 8, height: 8)
+        tv.drawsBackground = true
+        tv.backgroundColor = .textBackgroundColor
+    }
     tv.isRichText = rich
     tv.importsGraphics = false
     tv.allowsUndo = true
     tv.usesFindBar = true
     tv.isIncrementalSearchingEnabled = true
     tv.isContinuousSpellCheckingEnabled = true
-    tv.drawsBackground = true
-    tv.backgroundColor = .textBackgroundColor
     tv.font = NSFont.systemFont(ofSize: size)
     tv.textColor = .labelColor
     let style = MarkupConverter.paragraphStyle(.normal, bulleted: bulleted)
@@ -539,6 +549,11 @@ func makeEditorScrollView(bulleted: Bool, rich: Bool, size: CGFloat) -> (NSScrol
         : [.font: NSFont.systemFont(ofSize: size), .foregroundColor: NSColor.labelColor, .paragraphStyle: style]
     // One tooltip area over the whole text; it only says something over a pill.
     tv.addToolTip(NSRect(x: 0, y: 0, width: 100_000, height: 1_000_000), owner: tv, userData: nil)
+    return tv
+}
+
+@MainActor
+func wrapInScrollView(_ tv: NSTextView) -> NSScrollView {
     let scroll = TextScrollView()
     scroll.hasVerticalScroller = true
     scroll.hasHorizontalScroller = false
@@ -546,7 +561,13 @@ func makeEditorScrollView(bulleted: Bool, rich: Bool, size: CGFloat) -> (NSScrol
     scroll.drawsBackground = true
     scroll.backgroundColor = .textBackgroundColor
     scroll.documentView = tv
-    return (scroll, tv)
+    return scroll
+}
+
+/// The editor text view in an editor's view (itself, or in a scroll view).
+@MainActor
+func editorTextView(in view: NSView) -> EditorTextView? {
+    (view as? EditorTextView) ?? ((view as? NSScrollView)?.documentView as? EditorTextView)
 }
 
 // MARK: - SwiftUI wrappers
@@ -559,7 +580,27 @@ func proposedLength(_ value: CGFloat?, default fallback: CGFloat) -> CGFloat {
     return value
 }
 
-/// The response (and opening/closing) editor.
+/// The size of an editor: in a scroll view, whatever it is offered; inline,
+/// the offered width and the height of its text (or more, to fill a row).
+@MainActor
+func editorSize(_ view: NSView, proposal: ProposedViewSize, inline: Bool, defaultHeight: CGFloat) -> CGSize {
+    let width = proposedLength(proposal.width, default: 320)
+    guard inline, let tv = editorTextView(in: view), let lm = tv.layoutManager, let tc = tv.textContainer else {
+        return CGSize(width: width, height: proposedLength(proposal.height, default: defaultHeight))
+    }
+    let inset = tv.textContainerInset
+    tc.containerSize = NSSize(width: max(1, width - 2 * inset.width), height: CGFloat.greatestFiniteMagnitude)
+    lm.ensureLayout(for: tc)
+    let used = lm.usedRect(for: tc)
+    let extra = lm.extraLineFragmentRect
+    let textHeight = max(used.maxY, extra.maxY, tv.baseSize * 1.4)
+    let content = ceil(textHeight + 2 * inset.height)
+    let offered = proposal.height.flatMap { $0.isFinite ? $0 : nil } ?? 0
+    return CGSize(width: width, height: max(content, offered))
+}
+
+/// The response (and opening/closing) editor. Inline, it has no scroll view
+/// of its own and is as tall as its text (the Response Editor's cells).
 struct RichTextEditor: NSViewRepresentable {
     var markup: String
     var size: CGFloat
@@ -568,14 +609,15 @@ struct RichTextEditor: NSViewRepresentable {
     var look: (Token) -> TokenLook
     var handle: EditorHandle?
     var placeholder: String?
+    var inline = false
     var onChange: (String) -> Void
     var onFocus: ((EditorTextView) -> Void)?
     var onTokenDoubleClick: ((Token) -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
-    func makeNSView(context: Context) -> NSScrollView {
-        let (scroll, tv) = makeEditorScrollView(bulleted: false, rich: true, size: size)
+    func makeNSView(context: Context) -> NSView {
+        let tv = makeEditorTextView(bulleted: false, rich: true, size: size, inline: inline)
         let c = context.coordinator
         c.parent = self
         c.provider.look = look
@@ -588,15 +630,15 @@ struct RichTextEditor: NSViewRepresentable {
         c.load(markup, into: tv, size: size)
         c.signature = tokenSignature
         handle?.textView = tv
-        return scroll
+        return inline ? tv : wrapInScrollView(tv)
     }
 
-    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSScrollView, context: Context) -> CGSize? {
-        CGSize(width: proposedLength(proposal.width, default: 320), height: proposedLength(proposal.height, default: 160))
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSView, context: Context) -> CGSize? {
+        editorSize(nsView, proposal: proposal, inline: inline, defaultHeight: 160)
     }
 
-    func updateNSView(_ scroll: NSScrollView, context: Context) {
-        guard let tv = scroll.documentView as? EditorTextView else { return }
+    func updateNSView(_ view: NSView, context: Context) {
+        guard let tv = editorTextView(in: view) else { return }
         let c = context.coordinator
         c.parent = self
         c.provider.look = look
@@ -612,7 +654,7 @@ struct RichTextEditor: NSViewRepresentable {
         }
     }
 
-    static func dismantleNSView(_ scroll: NSScrollView, coordinator: Coordinator) {
+    static func dismantleNSView(_ view: NSView, coordinator: Coordinator) {
         coordinator.undo.removeAllActions()
     }
 
@@ -674,8 +716,7 @@ struct RichTextEditor: NSViewRepresentable {
             }
         }
 
-        /// Return in an empty bullet or quote ends the list; Tab is kept
-        /// for moving between fields.
+        /// Return in an empty bullet or quote ends the list.
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
             guard selector == #selector(NSResponder.insertNewline(_:)), let storage = textView.textStorage else { return false }
             let ns = storage.string as NSString
@@ -697,33 +738,36 @@ struct RichTextEditor: NSViewRepresentable {
     }
 }
 
-/// A plain-text editor: the comment's text, or the ideas (one dot point per
-/// line, drawn as bullets).
+/// A plain-text editor: a comment's text, or its ideas (one dot point per
+/// line, drawn as bullets). Inline, as tall as its text.
 struct PlainTextEditor: NSViewRepresentable {
     var text: String
     var size: CGFloat
     var bulleted = false
     var placeholder: String?
+    var inline = false
     var onChange: (String) -> Void
     var onSelectionChange: ((NSRange) -> Void)?
+    var onFocus: ((EditorTextView) -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
-    func makeNSView(context: Context) -> NSScrollView {
-        let (scroll, tv) = makeEditorScrollView(bulleted: bulleted, rich: false, size: size)
+    func makeNSView(context: Context) -> NSView {
+        let tv = makeEditorTextView(bulleted: bulleted, rich: false, size: size, inline: inline)
         context.coordinator.parent = self
         tv.placeholder = placeholder
         tv.delegate = context.coordinator
+        tv.onFocus = { [weak coordinator = context.coordinator] view in coordinator?.parent?.onFocus?(view) }
         context.coordinator.load(text, into: tv)
-        return scroll
+        return inline ? tv : wrapInScrollView(tv)
     }
 
-    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSScrollView, context: Context) -> CGSize? {
-        CGSize(width: proposedLength(proposal.width, default: 320), height: proposedLength(proposal.height, default: 100))
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSView, context: Context) -> CGSize? {
+        editorSize(nsView, proposal: proposal, inline: inline, defaultHeight: 100)
     }
 
-    func updateNSView(_ scroll: NSScrollView, context: Context) {
-        guard let tv = scroll.documentView as? EditorTextView else { return }
+    func updateNSView(_ view: NSView, context: Context) {
+        guard let tv = editorTextView(in: view) else { return }
         context.coordinator.parent = self
         tv.placeholder = placeholder
         if text != context.coordinator.lastText || size != tv.baseSize {
@@ -733,7 +777,7 @@ struct PlainTextEditor: NSViewRepresentable {
         }
     }
 
-    static func dismantleNSView(_ scroll: NSScrollView, coordinator: Coordinator) {
+    static func dismantleNSView(_ view: NSView, coordinator: Coordinator) {
         coordinator.undo.removeAllActions()
     }
 

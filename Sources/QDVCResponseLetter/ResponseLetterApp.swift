@@ -28,7 +28,7 @@ struct ResponseLetterApp: App {
         Window("QDVC Response Letter", id: MainWindowID.main) {
             ContentView()
                 .environment(model)
-                .frame(minWidth: 900, minHeight: 560)
+                .frame(minWidth: 720, minHeight: 520)
                 .onAppear { appDelegate.model = model }
         }
         .defaultSize(width: 1360, height: 860)
@@ -219,16 +219,16 @@ struct ResponseCommands: Commands {
         }
 
         CommandGroup(before: .sidebar) {
-            Button("Overview") { model.selection = .overview }
-                .keyboardShortcut("1", modifiers: [.command, .control])
-            Button("Decision Letter") { model.selection = .decisionLetter }
-                .keyboardShortcut("2", modifiers: [.command, .control])
-            Button("Opening & Closing") { model.selection = .openingClosing }
-                .keyboardShortcut("3", modifiers: [.command, .control])
-            Button("Variables") { model.selection = .variables }
-                .keyboardShortcut("4", modifiers: [.command, .control])
-            Button("Issues") { model.selection = .issues }
-                .keyboardShortcut("5", modifiers: [.command, .control])
+            let pages: [(String, SidebarItem)] = [
+                ("Overview", .overview), ("Decision Letter", .decisionLetter), ("Triage Editor", .triageEditor),
+                ("Response Editor", .responseEditor), ("Opening & Closing", .openingClosing),
+                ("Variables", .variables), ("Issues", .issues), ("Traceability", .traceability),
+            ]
+            ForEach(Array(pages.enumerated()), id: \.offset) { i, page in
+                Button(page.0) { model.selection = page.1 }
+                    .keyboardShortcut(KeyEquivalent(Character(String(i + 1))), modifiers: [.command, .control])
+                    .disabled(!model.isOpen)
+            }
             Divider()
         }
     }

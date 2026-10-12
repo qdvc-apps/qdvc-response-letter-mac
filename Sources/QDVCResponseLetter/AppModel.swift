@@ -7,10 +7,12 @@ import UniformTypeIdentifiers
 enum SidebarItem: Hashable {
     case overview
     case decisionLetter
+    case triageEditor
+    case responseEditor
     case openingClosing
     case variables
     case issues
-    case comment(String)
+    case traceability
 }
 
 /// A section being created or edited.
@@ -52,7 +54,16 @@ final class AppModel {
     var selection: SidebarItem? = .overview {
         didSet { if oldValue != selection { flushSaves() } }
     }
-    var overviewSelection: Set<String> = []
+    /// Selected rows in Overview and the Triage Editor (shared).
+    var tableSelection: Set<String> = []
+    /// The comment whose row in the Response Editor was last edited or
+    /// clicked.
+    var focusedCommentKey: String?
+    /// The selected card in Traceability.
+    var traceSelection: String?
+    /// A comment for the Response Editor to scroll to.
+    var scrollTarget: String?
+    var scrollRevision = 0
     var searchText = ""
     var triageFilter: Set<Triage> = []
     var statusFilter: Set<Status> = []
@@ -208,7 +219,9 @@ final class AppModel {
         undoManager?.removeAllActions()
         stamps = Workspace.stamps(url)
         collapsedSections = []
-        overviewSelection = []
+        tableSelection = []
+        focusedCommentKey = nil
+        traceSelection = nil
         selection = letter.sections.isEmpty ? .decisionLetter : .overview
         addRecent(url)
         UserDefaults.standard.set(url.path, forKey: Prefs.last)
@@ -282,8 +295,7 @@ final class AppModel {
             letter = loaded.letter
             stamps = now
             undoManager?.removeAllActions()
-            if case .comment(let key)? = selection, letter.comments[key] == nil { selection = .overview }
-            overviewSelection = overviewSelection.filter { letter.comments[$0] != nil }
+            validateSelection()
             if !force { show("Reloaded changes made outside the app.") }
         } catch {
             stamps = now
@@ -341,8 +353,9 @@ final class AppModel {
     }
 
     private func validateSelection() {
-        if case .comment(let key)? = selection, letter.comments[key] == nil { selection = .overview }
-        overviewSelection = overviewSelection.filter { letter.comments[$0] != nil }
+        tableSelection = tableSelection.filter { letter.comments[$0] != nil }
+        if let k = focusedCommentKey, letter.comments[k] == nil { focusedCommentKey = nil }
+        if let k = traceSelection, letter.comments[k] == nil { traceSelection = nil }
     }
 
     func show(_ text: String, warning: Bool = false) {
@@ -380,34 +393,74 @@ final class AppModel {
         return section.commentKeys.filter { key in letter.comments[key].map { matches($0, ids: ids) } ?? false }
     }
 
+    /// The one comment the current page is about: the selected row
+    /// (Overview, Triage Editor), the row being edited (Response Editor) or
+    /// the selected card (Traceability).
     var selectedCommentKey: String? {
-        if case .comment(let key)? = selection { return key }
-        if selection == .overview, overviewSelection.count == 1 { return overviewSelection.first }
-        return nil
+        switch selection {
+        case .overview?, .triageEditor?: return tableSelection.count == 1 ? tableSelection.first : nil
+        case .responseEditor?: return focusedCommentKey
+        case .traceability?: return traceSelection
+        default: return nil
+        }
     }
 
     /// The comments that menu commands act on, in letter order.
     var targetKeys: [String] {
-        if case .comment(let key)? = selection { return [key] }
-        if selection == .overview { return letter.orderedCommentKeys.filter { overviewSelection.contains($0) } }
-        return []
+        switch selection {
+        case .overview?, .triageEditor?: return letter.orderedCommentKeys.filter { tableSelection.contains($0) }
+        default: return selectedCommentKey.map { [$0] } ?? []
+        }
     }
 
+    /// Opens a comment in the Response Editor, scrolled to its row.
     func openComment(_ key: String) {
         guard letter.comments[key] != nil else { return }
-        if let si = letter.sectionIndex(ofComment: key) { collapsedSections.remove(letter.sections[si].key) }
-        selection = .comment(key)
+        selection = .responseEditor
+        focusedCommentKey = key
+        scrollTarget = key
+        scrollRevision += 1
+    }
+
+    /// Selects a comment in the Triage Editor.
+    func openInTriage(_ key: String) {
+        guard letter.comments[key] != nil else { return }
+        selection = .triageEditor
+        tableSelection = [key]
+    }
+
+    /// Shows a comment on the current page if it lists comments, otherwise
+    /// in the Response Editor.
+    func reveal(_ key: String) {
+        switch selection {
+        case .overview?, .triageEditor?: tableSelection = [key]
+        case .traceability?: traceSelection = key
+        case .responseEditor?:
+            focusedCommentKey = key
+            scrollTarget = key
+            scrollRevision += 1
+        default: openComment(key)
+        }
+    }
+
+    /// Called when an editor in a Response Editor row gets the focus.
+    func focusRow(_ key: String) {
+        guard focusedCommentKey != key else { return }
+        // Not during a view update: focus can change while SwiftUI is
+        // laying out.
+        DispatchQueue.main.async { [weak self] in self?.focusedCommentKey = key }
     }
 
     func step(_ offset: Int) {
         let keys = letter.orderedCommentKeys
         guard !keys.isEmpty else { return }
+        var next = offset > 0 ? keys[0] : keys[keys.count - 1]
         if let current = selectedCommentKey, let i = keys.firstIndex(of: current) {
             let j = i + offset
-            if keys.indices.contains(j) { openComment(keys[j]) }
-        } else {
-            openComment(offset > 0 ? keys[0] : keys[keys.count - 1])
+            guard keys.indices.contains(j) else { return }
+            next = keys[j]
         }
+        reveal(next)
     }
 
     var issues: [Issue] { letter.issues() }
@@ -606,12 +659,12 @@ final class AppModel {
             return
         }
         if let key = perform("New Comment", { $0.addComment(inSection: section, after: after) }), let key {
-            openComment(key)
+            reveal(key)
         }
     }
 
     func newComment(inSection section: String) {
-        if let key = perform("New Comment", { $0.addComment(inSection: section) }), let key { openComment(key) }
+        if let key = perform("New Comment", { $0.addComment(inSection: section) }), let key { reveal(key) }
     }
 
     func deleteComments(_ keys: [String]? = nil) {
@@ -636,10 +689,9 @@ final class AppModel {
         perform(keys.count == 1 ? "Delete Comment" : "Delete Comments") { letter in
             for k in keys { letter.deleteComment(k) }
         }
-        overviewSelection.subtract(keys)
-        if case .comment(let k)? = selection, keys.contains(k) {
-            if let next { selection = .comment(next) } else { selection = .overview }
-        }
+        tableSelection.subtract(keys)
+        if let k = focusedCommentKey, keys.contains(k) { focusedCommentKey = next }
+        if let k = traceSelection, keys.contains(k) { traceSelection = nil }
         reportRenumbering(from: before)
     }
 
@@ -698,7 +750,7 @@ final class AppModel {
         guard let key = key ?? selectedCommentKey, let next = letter.neighbour(of: key, offset: 1) else { return }
         let a = id(key), b = id(next)
         guard let result = perform("Merge Comments", { try $0.mergeComment(key, withNext: next) }) else { return }
-        openComment(result.key)
+        reveal(result.key)
         show(renumberingText("Merged \(b) into \(a). Cross-references to \(b) now point to \(a).", result.renumbered))
     }
 

@@ -79,10 +79,11 @@ The app (`QDVCResponseLetter`): `ResponseLetterApp` (the welcome and main
 window scenes, delegate, menus), `Welcome` (the welcome window; it and
 the main window hand over to each other by watching
 `AppModel.workspaceURL`), `AppModel` (state, opening and saving, undo, every operation;
-`@Observable`, main actor), `ContentView` (welcome, split view, sidebar,
-toolbar, sheet routing), `CommentDetailView` (the comment editor, format
-bar, inspectors), `LetterView` (decision letter, gutter), `PageViews`
-(Overview, Opening & Closing, Variables, Issues), `Sheets` (and the
+`@Observable`, main actor), `ContentView` (the split view, sidebar, toolbar, page and sheet routing),
+`PageViews` (Overview, Triage Editor, Opening & Closing, Variables,
+Issues), `ResponseEditor` (the editable table), `Traceability` (the link
+map, from `ResponseLetter.links()`), `Inspectors` (the format bar and one
+inspector per page), `LetterView` (decision letter, gutter), `Sheets` (and the
 Settings window), `TextEditors` (below), `PaneStack` (resizable stacked
 panes), `Style`.
 
@@ -98,6 +99,11 @@ attributed string to `RichText` and back. `MarkupLayoutManager` draws
 bullets and quote bars. Copy and paste use a private pasteboard type
 carrying markup (plain text for other apps); pasted plain text takes the
 formatting where it lands.
+
+Editors come in two forms: in a scroll view (Opening & Closing) or
+`inline` (the Response Editor's cells), with no scroll view and a
+`sizeThatFits` that lays the text out at the offered width and returns its
+height, so a row grows as you type.
 
 Each editor reports its markup on every change; `updateNSView` reloads
 only when the model's markup differs from what the editor last produced,
@@ -143,6 +149,8 @@ AppKit's autoresizing keeps any difference between it and the scroll view
 - Split renumbers, splits the source range when the text is untouched, and
   makes references pending; merge redirects them and flags duplicates.
 - `revert` keeps typing done after the change it undoes.
+- `links()` gives related links once and cross-references by direction,
+  pending ones separately.
 - A workspace saves and loads to an identical letter; orphan comment files
   are kept; bad files are reported with file and line.
 - DOCX output is a valid ZIP with the table's header (not repeated on every
