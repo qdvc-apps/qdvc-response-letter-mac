@@ -75,8 +75,10 @@ imports SwiftUI, which has its own `Section` (QDVC Progress hit the same
 clash with `GridRow`). Check new public type names against SwiftUI, AppKit
 and Foundation.
 
-The app (`QDVCResponseLetter`): `ResponseLetterApp` (scene, delegate,
-menus), `AppModel` (state, opening and saving, undo, every operation;
+The app (`QDVCResponseLetter`): `ResponseLetterApp` (the welcome and main
+window scenes, delegate, menus), `Welcome` (the welcome window; it and
+the main window hand over to each other by watching
+`AppModel.workspaceURL`), `AppModel` (state, opening and saving, undo, every operation;
 `@Observable`, main actor), `ContentView` (welcome, split view, sidebar,
 toolbar, sheet routing), `CommentDetailView` (the comment editor, format
 bar, inspectors), `LetterView` (decision letter, gutter), `PageViews`
@@ -112,6 +114,13 @@ its own `UndoManager` (via the `undoManager(for:)` delegate method).
 - On returning to the app, file stamps are compared and the workspace is
   reloaded if something outside changed it.
 
+### 2.3 Layout
+
+Never let a view's content decide the window's width (docs/DESIGN.md
+§Layout rule): no `.fixedSize()` on menus or pickers whose items are long
+(give them a width), `sizeThatFits` on every `NSViewRepresentable`, and the
+detail area in a flexible, clipped frame.
+
 ## 3. Behaviour to preserve (tests)
 
 - YAML round trips everything the app writes, and reads hand-written YAML.
@@ -122,5 +131,6 @@ its own `UndoManager` (via the `undoManager(for:)` delegate method).
 - `revert` keeps typing done after the change it undoes.
 - A workspace saves and loads to an identical letter; orphan comment files
   are kept; bad files are reported with file and line.
-- DOCX output is a valid ZIP with the table's header, black section rows
-  and escaped text.
+- DOCX output is a valid ZIP with the table's header (not repeated on every
+  page), equal comment and response columns, black section rows and
+  escaped text.

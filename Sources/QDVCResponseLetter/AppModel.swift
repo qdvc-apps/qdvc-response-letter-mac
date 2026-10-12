@@ -78,6 +78,14 @@ final class AppModel {
     var triageColoursInLetter: Bool {
         didSet { UserDefaults.standard.set(triageColoursInLetter, forKey: Prefs.triageColours) }
     }
+    /// Show the welcome window at launch; otherwise reopen the last letter.
+    var showWelcomeAtLaunch: Bool {
+        didSet { UserDefaults.standard.set(showWelcomeAtLaunch, forKey: Prefs.showWelcome) }
+    }
+    /// Set when the user asks for the welcome window (Window menu), so it
+    /// stays up even though a letter is open.
+    @ObservationIgnored var welcomeRequested = false
+    @ObservationIgnored private var didStartUp = false
     private(set) var recentWorkspaces: [URL] = []
 
     @ObservationIgnored weak var undoManager: UndoManager?
@@ -95,12 +103,14 @@ final class AppModel {
         static let triageColours = "triageColoursInLetter"
         static let recent = "recentWorkspaces"
         static let last = "lastWorkspace"
+        static let showWelcome = "showWelcomeAtLaunch"
     }
 
     init() {
         let d = UserDefaults.standard
         editorFontSize = d.object(forKey: Prefs.editorFontSize) as? Double ?? 13
         triageColoursInLetter = d.object(forKey: Prefs.triageColours) as? Bool ?? true
+        showWelcomeAtLaunch = d.object(forKey: Prefs.showWelcome) as? Bool ?? true
         recentWorkspaces = (d.stringArray(forKey: Prefs.recent) ?? []).map { URL(fileURLWithPath: $0) }
     }
 
@@ -113,8 +123,13 @@ final class AppModel {
 
     // MARK: - Opening and creating
 
+    /// At launch: the welcome window offers the recent letters, unless
+    /// the user has turned it off, in which case the last letter reopens.
     func startUp() {
-        guard workspaceURL == nil, let path = UserDefaults.standard.string(forKey: Prefs.last) else { return }
+        guard !didStartUp else { return }
+        didStartUp = true
+        guard !showWelcomeAtLaunch, workspaceURL == nil,
+              let path = UserDefaults.standard.string(forKey: Prefs.last) else { return }
         let url = URL(fileURLWithPath: path)
         if Workspace.isWorkspace(url) { open(url) }
     }
@@ -211,6 +226,11 @@ final class AppModel {
         var list = recentWorkspaces.filter { $0.standardizedFileURL != url.standardizedFileURL }
         list.insert(url, at: 0)
         recentWorkspaces = Array(list.prefix(10))
+        UserDefaults.standard.set(recentWorkspaces.map(\.path), forKey: Prefs.recent)
+    }
+
+    func removeRecent(_ url: URL) {
+        recentWorkspaces.removeAll { $0.standardizedFileURL == url.standardizedFileURL }
         UserDefaults.standard.set(recentWorkspaces.map(\.path), forKey: Prefs.recent)
     }
 

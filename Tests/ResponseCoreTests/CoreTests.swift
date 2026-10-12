@@ -293,6 +293,7 @@ final class WorkspaceTests: XCTestCase {
         let loaded = try Workspace.load(folder)
         XCTAssertEqual(loaded.letter, letter)
         XCTAssertTrue(loaded.notes.isEmpty)
+        XCTAssertEqual(Workspace.summary(folder)?.manuscript, "MS-1")
 
         // Deleting a comment deletes its file on save.
         var changed = letter
@@ -336,7 +337,9 @@ final class ExportTests: XCTestCase {
         XCTAssertTrue(xml.contains("Reviewer 1 comments"))
         XCTAssertTrue(xml.contains("Please fix &lt;this&gt; &amp; that."))
         XCTAssertTrue(xml.contains("w:fill=\"000000\""))
-        XCTAssertTrue(xml.contains("<w:tblHeader/>"))
+        XCTAssertFalse(xml.contains("<w:tblHeader/>"), "the header row must not repeat on every page")
+        // Comments and responses get equal widths.
+        XCTAssertEqual(xml.components(separatedBy: "<w:gridCol w:w=\"4013\"/>").count, 3)
         XCTAssertTrue(xml.contains("Editor/Reviewer Comments"))
         XCTAssertFalse(DocxExport.discussion(letter).isEmpty)
     }

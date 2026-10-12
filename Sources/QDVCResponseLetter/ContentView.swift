@@ -5,6 +5,8 @@ import SwiftUI
 struct ContentView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.undoManager) private var undoManager
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
 
     var body: some View {
         @Bindable var model = model
@@ -12,13 +14,19 @@ struct ContentView: View {
             if model.isOpen {
                 MainView()
             } else {
-                WelcomeView()
+                Color.clear
             }
         }
         .navigationTitle(model.windowTitle)
         .navigationSubtitle(model.isOpen ? model.letter.settings.manuscript : "")
-        .onAppear { model.undoManager = undoManager }
+        .onAppear {
+            model.undoManager = undoManager
+            if !model.isOpen { showWelcome() }
+        }
         .onChange(of: undoManager) { _, new in model.undoManager = new }
+        .onChange(of: model.workspaceURL) { _, url in
+            if url == nil { showWelcome() }
+        }
         .sheet(item: $model.sheet) { kind in
             SheetHost(kind: kind)
                 .environment(model)
@@ -34,47 +42,11 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Welcome
-
-struct WelcomeView: View {
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        VStack(spacing: 18) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: 112, height: 112)
-            Text("QDVC Response Letter").font(.largeTitle).fontWeight(.semibold)
-            Text("Paste a decision letter, mark up the editors' and reviewers' comments, triage them, draft a response to each, and export the response letter as a Word table.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: 520)
-            HStack(spacing: 12) {
-                Button("New Response Letter…") { model.sheet = .newLetter(nil) }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.defaultAction)
-                Button("Open…") { model.chooseWorkspace() }
-            }
-            .controlSize(.large)
-            if !model.recentWorkspaces.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Recent").font(.headline)
-                    ForEach(model.recentWorkspaces.prefix(6), id: \.self) { url in
-                        Button {
-                            model.open(url)
-                        } label: {
-                            Label(url.lastPathComponent, systemImage: "folder")
-                        }
-                        .buttonStyle(.link)
-                        .help(url.path)
-                    }
-                }
-                .frame(width: 360, alignment: .leading)
-                .padding(.top, 8)
-            }
-        }
-        .padding(40)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+extension ContentView {
+    /// With no letter open, the welcome window takes over.
+    func showWelcome() {
+        openWindow(id: WelcomeWindow.id)
+        DispatchQueue.main.async { dismissWindow(id: MainWindowID.main) }
     }
 }
 
@@ -338,6 +310,13 @@ struct DetailView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
+        page
+            .frame(minWidth: 360, maxWidth: .infinity, minHeight: 300, maxHeight: .infinity)
+            .clipped()
+    }
+
+    @ViewBuilder
+    private var page: some View {
         switch model.selection {
         case .overview?:
             OverviewView()

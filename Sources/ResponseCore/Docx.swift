@@ -13,7 +13,9 @@ public enum DocxExport {
     public static func responseLetter(_ letter: ResponseLetter, date: Date = Date()) -> Data {
         let ids = letter.idMap()
         let w = Writer(letter: letter, ids: ids)
-        let widths = [1000, 3400, a4Short - 2 * margin - 1000 - 3400]
+        // The ID column, then the comments and the responses at equal widths.
+        let half = (a4Short - 2 * margin - 1000) / 2
+        let widths = [1000, half, a4Short - 2 * margin - 1000 - half]
         var body = ""
         body += w.titleBlock()
         body += w.richParagraphs(RichText(markup: letter.opening))
@@ -46,7 +48,10 @@ public enum DocxExport {
     public static func discussion(_ letter: ResponseLetter, date: Date = Date()) -> Data {
         let ids = letter.idMap()
         let w = Writer(letter: letter, ids: ids)
-        let widths = [1300, 4300, 3700, a4Long - 2 * margin - 1300 - 4300 - 3700]
+        // The ID, then the comment and the draft response at equal widths,
+        // with the ideas between them.
+        let half = (a4Long - 2 * margin - 1300 - 3700) / 2
+        let widths = [1300, half, 3700, a4Long - 2 * margin - 1300 - 3700 - half]
         let p = letter.progress()
         var body = ""
         body += w.paragraph(w.run(letter.settings.title.isEmpty ? "Response letter" : letter.settings.title,
@@ -347,10 +352,11 @@ public enum DocxExport {
             return "<w:tc><w:tcPr>\(props)</w:tcPr>\(content.isEmpty ? paragraph("") : content)</w:tc>"
         }
 
+        /// The header row appears once, at the top of the table (it is not
+        /// repeated on later pages); it is kept on one page.
         func row(cells: [String], header: Bool = false, cantSplit: Bool = false) -> String {
             var props = ""
             if cantSplit || header { props += "<w:cantSplit/>" }
-            if header { props += "<w:tblHeader/>" }
             return "<w:tr>" + (props.isEmpty ? "" : "<w:trPr>\(props)</w:trPr>") + cells.joined() + "</w:tr>"
         }
 

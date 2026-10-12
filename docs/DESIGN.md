@@ -1,8 +1,14 @@
 # QDVC Response Letter — Design Notes
 
-## The window
+## Windows
 
-A three-column window in the Mail/Notes/Xcode mould: a sidebar, the page or
+At launch, a welcome window in the style of Xcode and Keynote: the icon,
+version, New and Open on the left; recent letters on the right, with the
+folder name, manuscript ID and path. It hands over to the main window when
+a letter opens, and comes back when the letter is closed. Opening a letter
+from the File menu works from either window.
+
+The main window is a three-column window in the Mail/Notes/Xcode mould: a sidebar, the page or
 comment being worked on, and an inspector (⌥⌘I), using standard
 NavigationSplitView, toolbar, search field and inspector, so the app picks
 up Liquid Glass on macOS 26 without custom chrome.
@@ -66,4 +72,13 @@ never lost. Typing has its own undo inside each field.
 - Comment text in the export is split into paragraphs at blank lines;
   single line breaks stay as line breaks (Join Wrapped Lines tidies
   hard-wrapped text).
-- The export's column widths are fixed (1.8 cm, 6 cm, the rest).
+- The export's columns: the ID (1.8 cm), then comments and responses at
+  equal widths. The header row is not repeated on every page.
+
+## Layout rule
+
+No page may make the window wider. Menus in the format bar have fixed
+widths (a menu button otherwise takes the width of its longest item, and
+these items are long excerpts), text views report the size they are
+offered rather than their content's, and the detail area takes whatever
+width the split view gives it.

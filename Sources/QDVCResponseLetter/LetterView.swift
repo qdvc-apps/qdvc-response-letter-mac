@@ -75,7 +75,7 @@ struct LetterActionBar: View {
                     Picker("Add to", selection: $model.letterSectionChoice) {
                         ForEach(model.letter.sections) { s in Text(s.title).tag(Optional(s.key)) }
                     }
-                    .fixedSize()
+                    .frame(maxWidth: 240)
                 }
                 Button("New Section Here…") {
                     let text = (model.letter.decisionLetter as NSString)
@@ -219,6 +219,10 @@ struct LetterTextView: NSViewRepresentable {
         }
         apply(to: tv, scroll: scroll, coordinator: context.coordinator, force: true)
         return scroll
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSScrollView, context: Context) -> CGSize? {
+        CGSize(width: proposedLength(proposal.width, default: 480), height: proposedLength(proposal.height, default: 300))
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {

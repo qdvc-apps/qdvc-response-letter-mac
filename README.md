@@ -14,7 +14,13 @@ with co-authors. The format is documented in
 
 ## What it does
 
-The window has a sidebar (pages, then every section and its comments), the
+At launch a welcome window, as in Xcode and Keynote, offers to create or
+open a response letter on the left and lists recent ones on the right
+(double-click to open; right-click to remove one, or Clear Recent List).
+Turn it off in Settings to reopen the last letter instead; Window › Welcome
+to QDVC Response Letter (⇧⌘1) brings it back at any time.
+
+The main window has a sidebar (pages, then every section and its comments), the
 page or comment you are working on, and an inspector (⌥⌘I). The layout and
 its precedents in Mail, Notes and Xcode are explained in
 [docs/DESIGN.md](docs/DESIGN.md).
@@ -56,9 +62,10 @@ its precedents in Mail, Notes and Xcode are explained in
 - **Opening & Closing**: the text before and after the table ("Dear
   Professor…").
 - **Export** (⇧⌘E) an A4 Word document: the title, the opening, the table
-  (a blank ID heading, a black band with a bold white heading such as
-  "Reviewer 1 comments" at the start of each section, the header row
-  repeated on every page) and the closing, with page numbers. Quoted text
+  (a blank ID heading, then the comments and responses in two columns of
+  equal width, with a black band and a bold white heading such as
+  "Reviewer 1 comments" at the start of each section; the header row
+  appears once, at the top) and the closing, with page numbers. Quoted text
   and bullets use Word's Quote and List Bullet styles, so they can be
   restyled in Word. The font, size and quote style are in Letter Settings
   (⌥⌘L), as is the ID style (separator and digits: RE1-01, RE1.1…).
@@ -148,7 +155,8 @@ not with `swift run`.
   go (typing, after a short pause). The app notices files changed by Git or
   another editor when you come back to it, and View › Reload from Disk (⌘R)
   re-reads them at any time.
-- Preferences (text size, highlight colours, recent letters): the standard
+- Preferences (text size, highlight colours, recent letters, the welcome
+  window): the standard
   macOS defaults domain (`defaults read org.qdvc.response-letter.mac`).
 
 ## Keyboard shortcuts
@@ -156,6 +164,7 @@ not with `swift run`.
 | Shortcut | Action |
 | --- | --- |
 | ⌘N / ⌘O | New / open response letter |
+| ⇧⌘1 | Welcome window (recent response letters) |
 | ⌘K | Mark selected text as a comment (Decision Letter) |
 | ⇧⌘K | New section at the selection (Decision Letter) |
 | ⌥⌘N | New comment |

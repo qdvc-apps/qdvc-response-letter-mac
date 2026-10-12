@@ -122,8 +122,11 @@ struct FormatBar: View {
             } label: {
                 Label("Variable", systemImage: "curlybraces")
             }
+            .menuStyle(.borderlessButton)
             .menuIndicator(.visible)
-            .fixedSize()
+            // A fixed width: a menu button otherwise takes the width of its
+            // longest item, and these items are long excerpts.
+            .frame(width: 92)
             .help("Insert a Variable: text with one official version, used in many places")
             Menu {
                 CrossReferenceMenuItems(model: model, exclude: exclude) { k in
@@ -132,8 +135,9 @@ struct FormatBar: View {
             } label: {
                 Label("Cross-reference", systemImage: "arrow.turn.down.right")
             }
+            .menuStyle(.borderlessButton)
             .menuIndicator(.visible)
-            .fixedSize()
+            .frame(width: 132)
             .help("Insert a cross-reference to another comment; it follows renumbering")
         }
         .buttonStyle(.borderless)
@@ -208,7 +212,7 @@ struct CommentInspector: View {
                             }
                             .menuStyle(.borderlessButton)
                             .menuIndicator(.hidden)
-                            .fixedSize()
+                            .frame(width: 28)
                         }
                     }
                 }
@@ -217,6 +221,7 @@ struct CommentInspector: View {
                         model.setRelated(key, $0, true)
                     }
                 }
+                .frame(maxWidth: 220, alignment: .leading)
             }
             Section("Decision letter") {
                 if c.source.isEmpty {

@@ -7,16 +7,29 @@ struct ResponseLetterApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var model = AppModel()
 
+    init() {
+        // Don't reopen windows from the last session: the welcome window
+        // (the first scene) decides what opens at launch.
+        UserDefaults.standard.register(defaults: ["NSQuitAlwaysKeepsWindows": false])
+    }
+
     var body: some Scene {
+        // Shown at launch, like Xcode's and Keynote's welcome windows.
+        Window("Welcome to QDVC Response Letter", id: WelcomeWindow.id) {
+            WelcomeWindow()
+                .environment(model)
+                .onAppear { appDelegate.model = model }
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+
         // One window, one response letter at a time, like a document.
-        Window("QDVC Response Letter", id: "main") {
+        Window("QDVC Response Letter", id: MainWindowID.main) {
             ContentView()
                 .environment(model)
                 .frame(minWidth: 900, minHeight: 560)
-                .onAppear {
-                    appDelegate.model = model
-                    model.startUp()
-                }
+                .onAppear { appDelegate.model = model }
         }
         .defaultSize(width: 1360, height: 860)
         .commands {
@@ -61,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 struct ResponseCommands: Commands {
     let model: AppModel
+    @Environment(\.openWindow) private var openWindow
 
     private var key: String? { model.selectedCommentKey }
     private var hasTargets: Bool { !model.targetKeys.isEmpty }
@@ -193,6 +207,15 @@ struct ResponseCommands: Commands {
             Divider()
             Button("Delete Comment…") { model.deleteComments() }
                 .disabled(!hasTargets)
+        }
+
+        CommandGroup(before: .windowList) {
+            Button("Welcome to QDVC Response Letter") {
+                model.welcomeRequested = true
+                openWindow(id: WelcomeWindow.id)
+            }
+            .keyboardShortcut("1", modifiers: [.command, .shift])
+            Divider()
         }
 
         CommandGroup(before: .sidebar) {

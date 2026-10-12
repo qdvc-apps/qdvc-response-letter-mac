@@ -70,6 +70,14 @@ public enum Workspace {
         FileManager.default.fileExists(atPath: url.appendingPathComponent(letterFile).path)
     }
 
+    /// The title and manuscript ID of a workspace, read cheaply for lists of
+    /// recent letters; nil if the folder isn't a readable workspace.
+    public static func summary(_ url: URL) -> (title: String, manuscript: String)? {
+        guard let node = try? readYAML(url, letterFile, required: true) else { return nil }
+        let s = decodeSettings(node)
+        return (s.title, s.manuscript)
+    }
+
     /// True if the folder has nothing in it but hidden files.
     public static func isEmptyFolder(_ url: URL) -> Bool {
         let items = (try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []

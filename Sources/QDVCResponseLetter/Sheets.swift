@@ -399,6 +399,12 @@ struct SettingsView: View {
     var body: some View {
         @Bindable var model = model
         Form {
+            Section("Launch") {
+                Toggle("Show the welcome window at launch", isOn: $model.showWelcomeAtLaunch)
+                Text("Otherwise the last response letter reopens. Window › Welcome to QDVC Response Letter (⇧⌘1) shows it at any time.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Editors") {
                 Stepper(value: $model.editorFontSize, in: 10...22, step: 1) {
                     Text("Text size: \(Int(model.editorFontSize)) pt")
@@ -417,6 +423,6 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460, height: 340)
+        .frame(width: 460, height: 440)
     }
 }

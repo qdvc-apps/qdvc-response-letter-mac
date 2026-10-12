@@ -140,12 +140,14 @@ struct Pane<Accessory: View, Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Text(title).font(.headline)
+                Text(title).font(.headline).lineLimit(1).layoutPriority(1)
                 Spacer(minLength: 8)
                 accessory()
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .clipped()
             Divider()
             content()
         }

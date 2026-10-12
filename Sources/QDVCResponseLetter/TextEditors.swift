@@ -525,6 +525,14 @@ func makeEditorScrollView(bulleted: Bool, rich: Bool, size: CGFloat) -> (NSScrol
 
 // MARK: - SwiftUI wrappers
 
+/// A proposed length, or a modest default when SwiftUI asks for an ideal
+/// size. Text views report this instead of their content's width, so a long
+/// paragraph never widens the window.
+func proposedLength(_ value: CGFloat?, default fallback: CGFloat) -> CGFloat {
+    guard let value, value.isFinite else { return fallback }
+    return value
+}
+
 /// The response (and opening/closing) editor.
 struct RichTextEditor: NSViewRepresentable {
     var markup: String
@@ -555,6 +563,10 @@ struct RichTextEditor: NSViewRepresentable {
         c.signature = tokenSignature
         handle?.textView = tv
         return scroll
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSScrollView, context: Context) -> CGSize? {
+        CGSize(width: proposedLength(proposal.width, default: 320), height: proposedLength(proposal.height, default: 160))
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
@@ -678,6 +690,10 @@ struct PlainTextEditor: NSViewRepresentable {
         tv.delegate = context.coordinator
         context.coordinator.load(text, into: tv)
         return scroll
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSScrollView, context: Context) -> CGSize? {
+        CGSize(width: proposedLength(proposal.width, default: 320), height: proposedLength(proposal.height, default: 100))
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
