@@ -45,12 +45,13 @@ in [docs/DESIGN.md](docs/DESIGN.md).
   follow your edits, comments whose text moved are found again, and on
   Done the app shows Before and Now for any comment whose text you changed
   or deleted and asks what to do.
-- **Triage Editor**: ID, comment, triage and ideas for every comment. Triage each
-  green (easy), yellow (trickier) or red (needs discussion with
-  co-authors); the inspector shows the comment in full, with its triage,
-  status, ideas (dot points, one per line) and related comments (link
-  comments that ask for the same thing, such as an associate editor
-  summarising two reviewers).
+- **Triage Editor**: the same kind of table as the Response Editor, with
+  the ID, comment, triage and ideas columns, every cell shown in full and
+  edited in place. Triage each comment green (easy), yellow (trickier) or
+  red (needs discussion with co-authors) from its triage cell or with ⌘1–⌘3
+  (⌘0 clears); ideas are dot points, one per line. The inspector has the
+  status and related comments (link comments that ask for the same thing,
+  such as an associate editor summarising two reviewers).
 - **Response Editor**: the whole response letter as one table, as in a
   word processor, so neighbouring comments stay in view. Black bands start
   each section; every cell (comment, ideas, response) is shown in full and
@@ -100,6 +101,10 @@ size and quote style are in Letter Settings (⌥⌘L), as is the ID style
 (⌥⇧⌘E): landscape A4, with each comment's triage colour, status, ideas,
 related comments and draft response, and a summary of progress. **Export
 Comments as CSV** for spreadsheets.
+
+**Large text** (the toolbar's text-size button, or ⌥⌘=) makes the text
+in Overview, the Decision Letter, both editors and Opening & Closing half as
+large again, for sharing your screen with co-authors on small screens.
 
 **Undo** (⌘Z) covers marking, splitting, merging, deleting, moving, triage,
 status, related comments and Variables. Typing is undone in the field you
@@ -206,6 +211,7 @@ not with `swift run`.
 | ⌘B ⌘I ⌘' ⇧⌘7 | Bold, italic, quoted text, bullets |
 | ⌃⌘1 … ⌃⌘8 | Overview, Decision Letter, Triage Editor, Response Editor, Opening & Closing, Variables, Issues, Traceability |
 | ⌥⌘I | Show or hide the inspector |
+| ⌥⌘= | Large text (also the toolbar's text-size button) |
 | ⇧⌘E / ⌥⇧⌘E | Export the response letter / the co-author version |
 | ⌥⌘L | Letter Settings |
 | ⌘R | Reload from disk |

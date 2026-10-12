@@ -152,8 +152,9 @@ struct CommentInspector: View {
     }
 }
 
-/// The Triage Editor's inspector: read the comment, choose a colour, note
-/// first ideas, link related comments.
+/// The Triage Editor's inspector: the triage colour (with its shortcut),
+/// the status, and related comments. The comment and the ideas are edited
+/// in the table.
 struct TriageInspector: View {
     @Environment(AppModel.self) private var model
     let key: String
@@ -162,12 +163,6 @@ struct TriageInspector: View {
         let c = model.letter.comments[key]!
         Form {
             Section { InspectorHeader(key: key) }
-            Section("Comment") {
-                Text(c.text.isEmpty ? "No text" : c.text)
-                    .textSelection(.enabled)
-                    .foregroundStyle(c.text.isEmpty ? .secondary : .primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
             Section("Triage") {
                 ForEach(Triage.allCases, id: \.self) { t in
                     Button {
@@ -189,19 +184,6 @@ struct TriageInspector: View {
                 Picker("Status", selection: Binding(get: { c.status }, set: { model.setStatus($0, for: [key]) })) {
                     ForEach(Status.allCases, id: \.self) { Text($0.label).tag($0) }
                 }
-            }
-            Section("Ideas") {
-                FillingScroll(padding: 0) {
-                    PlainTextEditor(
-                        text: c.ideas.joined(separator: "\n"),
-                        size: CGFloat(model.editorFontSize),
-                        bulleted: true,
-                        placeholder: "First ideas, one per line",
-                        onChange: { model.setIdeas(key, $0) }
-                    )
-                }
-                .id(key)
-                .frame(height: 150)
             }
             RelatedSection(key: key)
         }

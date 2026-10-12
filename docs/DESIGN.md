@@ -22,9 +22,10 @@ as they are in the Word document, so neighbouring comments stay in view.
     highlighted (in their triage colour, or the accent colour) and IDs and
     section starts in a margin, like line numbers in a code editor. A bar
     at the bottom offers what makes sense for the selection.
-  - **Triage Editor**: ID, comment (up to four lines; the full text is in
-    the tooltip and the inspector), triage and ideas; the inspector
-    carries the triage, status, ideas and related-comment controls. ⌘1–⌘3 work on several rows.
+  - **Triage Editor**: the same table as the Response Editor (one
+    component, `CommentTable`, with different columns): ID, comment,
+    triage (a dot and its name) and ideas, edited in place; the inspector
+    has the status and related comments.
   - **Response Editor**: the response letter as an editable table, with
     the exported letter's black section bands (aligned with the comment
     column, as in Word). Cells are NSTextViews that size themselves to
@@ -37,6 +38,14 @@ as they are in the Word document, so neighbouring comments stay in view.
   link to (a barycentre heuristic, so lines stay short and seldom cross),
   solid lines for related comments and dashed arrows for
   cross-references. Selecting a card dims everything it isn't linked to.
+
+## Large text
+
+A toolbar toggle (⌥⌘=) scales the text, and the fixed columns and controls
+around it, by 1.5 on every page where text is read or edited: Overview, the
+Decision Letter, both editors, and Opening & Closing. It is meant for screen
+sharing, so it is one switch rather than a setting; the base size is in
+Settings.
 
 ## Terminology
 

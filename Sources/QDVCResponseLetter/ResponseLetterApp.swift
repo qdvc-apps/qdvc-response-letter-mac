@@ -118,6 +118,8 @@ struct ResponseCommands: Commands {
         }
 
         CommandGroup(after: .toolbar) {
+            Toggle("Large Text", isOn: Binding(get: { model.largeText }, set: { model.largeText = $0 }))
+                .keyboardShortcut("=", modifiers: [.command, .option])
             Button("Reload from Disk") { model.checkForOutsideChanges(force: true) }
                 .keyboardShortcut("r")
                 .disabled(!model.isOpen)

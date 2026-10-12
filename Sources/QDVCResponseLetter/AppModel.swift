@@ -56,10 +56,10 @@ final class AppModel {
     var selection: SidebarItem? = .overview {
         didSet { if oldValue != selection { flushSaves() } }
     }
-    /// Selected rows in Overview and the Triage Editor (shared).
+    /// Selected rows in Overview.
     var tableSelection: Set<String> = []
-    /// The comment whose row in the Response Editor was last edited or
-    /// clicked.
+    /// The comment whose row in the Triage Editor or the Response Editor
+    /// was last edited or clicked (shared by the two).
     var focusedCommentKey: String?
     /// The selected card in Traceability.
     var traceSelection: String?
@@ -93,6 +93,18 @@ final class AppModel {
     var editorFontSize: Double {
         didSet { UserDefaults.standard.set(editorFontSize, forKey: Prefs.editorFontSize) }
     }
+    /// Large text: bigger text in the letter, the tables and the editors,
+    /// for sharing the screen with co-authors.
+    var largeText: Bool {
+        didSet { UserDefaults.standard.set(largeText, forKey: Prefs.largeText) }
+    }
+    static let largeTextScale: CGFloat = 1.5
+
+    /// How much larger than normal text is (1 normally).
+    var textScale: CGFloat { largeText ? Self.largeTextScale : 1 }
+    /// The text size in the letter, the tables and the editors.
+    var textSize: CGFloat { CGFloat(editorFontSize) * textScale }
+
     var triageColoursInLetter: Bool {
         didSet { UserDefaults.standard.set(triageColoursInLetter, forKey: Prefs.triageColours) }
     }
@@ -122,6 +134,7 @@ final class AppModel {
         static let recent = "recentWorkspaces"
         static let last = "lastWorkspace"
         static let showWelcome = "showWelcomeAtLaunch"
+        static let largeText = "largeText"
     }
 
     init() {
@@ -129,6 +142,7 @@ final class AppModel {
         editorFontSize = d.object(forKey: Prefs.editorFontSize) as? Double ?? 13
         triageColoursInLetter = d.object(forKey: Prefs.triageColours) as? Bool ?? true
         showWelcomeAtLaunch = d.object(forKey: Prefs.showWelcome) as? Bool ?? true
+        largeText = d.bool(forKey: Prefs.largeText)
         recentWorkspaces = (d.stringArray(forKey: Prefs.recent) ?? []).map { URL(fileURLWithPath: $0) }
     }
 
@@ -406,12 +420,12 @@ final class AppModel {
     }
 
     /// The one comment the current page is about: the selected row
-    /// (Overview, Triage Editor), the row being edited (Response Editor) or
+    /// (Overview), the row being edited (Triage Editor, Response Editor) or
     /// the selected card (Traceability).
     var selectedCommentKey: String? {
         switch selection {
-        case .overview?, .triageEditor?: return tableSelection.count == 1 ? tableSelection.first : nil
-        case .responseEditor?: return focusedCommentKey
+        case .overview?: return tableSelection.count == 1 ? tableSelection.first : nil
+        case .triageEditor?, .responseEditor?: return focusedCommentKey
         case .traceability?: return traceSelection
         default: return nil
         }
@@ -420,7 +434,7 @@ final class AppModel {
     /// The comments that menu commands act on, in letter order.
     var targetKeys: [String] {
         switch selection {
-        case .overview?, .triageEditor?: return letter.orderedCommentKeys.filter { tableSelection.contains($0) }
+        case .overview?: return letter.orderedCommentKeys.filter { tableSelection.contains($0) }
         default: return selectedCommentKey.map { [$0] } ?? []
         }
     }
@@ -434,20 +448,22 @@ final class AppModel {
         scrollRevision += 1
     }
 
-    /// Selects a comment in the Triage Editor.
+    /// Opens a comment in the Triage Editor, scrolled to its row.
     func openInTriage(_ key: String) {
         guard letter.comments[key] != nil else { return }
         selection = .triageEditor
-        tableSelection = [key]
+        focusedCommentKey = key
+        scrollTarget = key
+        scrollRevision += 1
     }
 
     /// Shows a comment on the current page if it lists comments, otherwise
     /// in the Response Editor.
     func reveal(_ key: String) {
         switch selection {
-        case .overview?, .triageEditor?: tableSelection = [key]
+        case .overview?: tableSelection = [key]
         case .traceability?: traceSelection = key
-        case .responseEditor?:
+        case .triageEditor?, .responseEditor?:
             focusedCommentKey = key
             scrollTarget = key
             scrollRevision += 1

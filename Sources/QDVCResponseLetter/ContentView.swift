@@ -75,6 +75,11 @@ struct MainView: View {
         .searchable(text: $model.searchText, placement: .toolbar, prompt: "Search comments")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
+                Toggle(isOn: $model.largeText) {
+                    Label("Large Text", systemImage: "textformat.size")
+                }
+                .toggleStyle(.button)
+                .help("Large text in the letter, the tables and the editors, for sharing your screen (⌥⌘=)")
                 FilterMenu()
                 Menu {
                     Button("Response Letter (Word)…") { model.sheet = .exportLetter }

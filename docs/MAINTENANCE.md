@@ -82,7 +82,8 @@ the main window hand over to each other by watching
 `AppModel.workspaceURL`), `AppModel` (state, opening and saving, undo, every operation;
 `@Observable`, main actor), `ContentView` (the split view, sidebar, toolbar, page and sheet routing),
 `PageViews` (Overview, Triage Editor, Opening & Closing, Variables,
-Issues), `ResponseEditor` (the editable table), `Traceability` (the link
+Issues), `CommentTable` (the editable table behind both the Triage Editor and the
+Response Editor; `TableLayout` sets each one's columns), `Traceability` (the link
 map, from `ResponseLetter.links()`), `Inspectors` (the format bar and one
 inspector per page), `LetterView` (decision letter, gutter), `Sheets` (and the
 Settings window), `TextEditors` (below), `PaneStack` (resizable stacked
@@ -134,6 +135,11 @@ width and its share of the height, so a pane can never be wider than the
 window (with `VSplitView`, the comment and Opening & Closing panes came out
 far wider than the window and their lines ran off the edge). Pane heights
 are remembered in the defaults (`panes.comment`, `panes.openingClosing`).
+
+A SwiftUI `Menu`'s label on macOS shows only text and SF Symbols: a drawn
+view (a triage dot) silently disappears, leaving what looks like an empty
+column. Use `PopUpButton`, which takes any label and pops up an AppKit menu
+(with images).
 
 Don't pair `.onTapGesture(count: 2)` with a single `.onTapGesture` on one
 view: SwiftUI then delays every single click by the system double-click

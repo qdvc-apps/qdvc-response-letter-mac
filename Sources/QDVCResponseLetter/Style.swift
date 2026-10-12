@@ -101,8 +101,12 @@ struct TriageChooser: View {
 /// The ID of a comment, in a monospaced font.
 struct CommentID: View {
     var text: String
+    var size: CGFloat?
+
     var body: some View {
-        Text(text).font(.system(.body, design: .monospaced)).fontWeight(.medium)
+        Text(text)
+            .font(size.map { .system(size: $0, design: .monospaced) } ?? .system(.body, design: .monospaced))
+            .fontWeight(.medium)
     }
 }
 
@@ -166,5 +170,77 @@ enum Platform {
     @MainActor
     static func send(_ action: Selector) {
         _ = NSApp.sendAction(action, to: nil, from: nil)
+    }
+}
+
+// MARK: - Pop-up buttons
+
+/// A choice in a PopUpButton.
+struct PopUpItem {
+    var title: String
+    var image: NSImage?
+    var checked: Bool
+    var action: () -> Void
+}
+
+/// A button with any label that pops up a menu of choices. (A SwiftUI Menu's
+/// label on macOS shows only text and SF Symbols, so a drawn triage dot in
+/// it simply disappears.)
+struct PopUpButton<Label: View>: View {
+    var items: [PopUpItem]
+    @ViewBuilder var label: () -> Label
+
+    var body: some View {
+        Button(action: popUp) {
+            label().contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @MainActor
+    private func popUp() {
+        guard let event = NSApp.currentEvent, let view = event.window?.contentView else { return }
+        let menu = NSMenu()
+        for item in items {
+            let menuItem = ClosureMenuItem(title: item.title, handler: item.action)
+            menuItem.image = item.image
+            menuItem.state = item.checked ? .on : .off
+            menu.addItem(menuItem)
+        }
+        NSMenu.popUpContextMenu(menu, with: event, for: view)
+    }
+}
+
+final class ClosureMenuItem: NSMenuItem {
+    private let handler: () -> Void
+
+    init(title: String, handler: @escaping () -> Void) {
+        self.handler = handler
+        super.init(title: title, action: #selector(fire), keyEquivalent: "")
+        target = self
+    }
+
+    required init(coder: NSCoder) { fatalError("not used") }
+
+    @objc private func fire() { handler() }
+}
+
+extension TriageDot {
+    /// The dot as a small image, for menus.
+    @MainActor
+    static func image(_ triage: Triage, size: CGFloat = 10) -> NSImage {
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            let path = NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1))
+            if triage == .none {
+                NSColor.tertiaryLabelColor.setStroke()
+                path.lineWidth = 1.2
+                path.stroke()
+            } else {
+                triage.nsColor.setFill()
+                path.fill()
+            }
+            return true
+        }
+        return image
     }
 }

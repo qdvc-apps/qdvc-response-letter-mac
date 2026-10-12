@@ -24,7 +24,7 @@ struct LetterView: View {
                             isEditing: editing,
                             highlights: deco.highlights,
                             labels: deco.labels,
-                            size: CGFloat(model.editorFontSize),
+                            size: model.textSize,
                             reveal: model.revealInLetter.flatMap { model.letter.comments[$0]?.source.first }
                                 .map { NSRange(location: $0.location, length: $0.length) },
                             revealRevision: model.revealRevision,
@@ -177,7 +177,7 @@ struct GutterLabel: Equatable {
 /// scrolls it) and draws the comment IDs and section starts in a margin to
 /// the left of the text, where an NSRulerView used to be.
 final class LetterNSTextView: NSTextView {
-    static let gutterWidth: CGFloat = 92
+    static let gutterWidth: CGFloat = 112
 
     var onDoubleClickAt: ((Int) -> Void)?
     var labels: [GutterLabel] = [] {
@@ -223,11 +223,12 @@ final class LetterNSTextView: NSTextView {
             let ci = max(0, min(label.location, length - 1))
             let glyph = lm.glyphIndexForCharacter(at: ci)
             let line = lm.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil)
-            let font: NSFont = label.isSection
-                ? .systemFont(ofSize: 10, weight: .semibold)
-                : .monospacedSystemFont(ofSize: 11, weight: .medium)
+            let scale = max(1, (font?.pointSize ?? 13) / 13)
+            let labelFont: NSFont = label.isSection
+                ? .systemFont(ofSize: 10 * scale, weight: .semibold)
+                : .monospacedSystemFont(ofSize: 11 * scale, weight: .medium)
             let attrs: [NSAttributedString.Key: Any] = [
-                .font: font,
+                .font: labelFont,
                 .foregroundColor: label.isSection ? NSColor.secondaryLabelColor : NSColor.labelColor,
             ]
             var text = label.text as NSString
