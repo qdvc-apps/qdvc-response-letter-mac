@@ -81,9 +81,9 @@ window scenes, delegate, menus), `Welcome` (the welcome window; it and
 the main window hand over to each other by watching
 `AppModel.workspaceURL`), `AppModel` (state, opening and saving, undo, every operation;
 `@Observable`, main actor), `ContentView` (the split view, sidebar, toolbar, page and sheet routing),
-`PageViews` (Overview, Triage Editor, Opening & Closing, Variables,
-Issues), `CommentTable` (the editable table behind both the Triage Editor and the
-Response Editor; `TableLayout` sets each one's columns), `Traceability` (the link
+`PageViews` (Overview, “Triage the comments”, Opening & Closing, Variables,
+Issues), `CommentTable` (the editable table behind both “Triage the comments” and 
+“Respond to the comments”; `TableLayout` sets each one's columns), `Traceability` (the link
 map, from `ResponseLetter.links()`), `Inspectors` (the format bar and one
 inspector per page), `LetterView` (decision letter, gutter), `Sheets` (and the
 Settings window), `TextEditors` (below), `PaneStack` (resizable stacked
@@ -103,7 +103,7 @@ carrying markup (plain text for other apps); pasted plain text takes the
 formatting where it lands.
 
 Editors have no scroll view of their own: `sizeThatFits` lays the text out
-at the offered width and returns its height, so a Response Editor row grows
+at the offered width and returns its height, so a “Respond to the comments” row grows
 as you type, and Opening & Closing scroll them in a `FillingScroll`.
 
 Each editor reports its markup on every change; `updateNSView` reloads
@@ -136,6 +136,11 @@ window (with `VSplitView`, the comment and Opening & Closing panes came out
 far wider than the window and their lines ran off the edge). Pane heights
 are remembered in the defaults (`panes.comment`, `panes.openingClosing`).
 
+Text views in the tables handle ⌘C, ⌘X, ⌘V and ⌘A themselves
+(`EditorTextView.performKeyEquivalent`), and the comment's context menu sits
+on the ID cell only: on the whole row, SwiftUI's context menu replaced the
+text views' own Cut / Copy / Paste menu.
+
 A SwiftUI `Menu`'s label on macOS shows only text and SF Symbols: a drawn
 view (a triage dot) silently disappears, leaving what looks like an empty
 column. Use `PopUpButton`, which takes any label and pops up an AppKit menu
@@ -160,7 +165,7 @@ NSTextView inside an NSScrollView repeatedly ended up wider than the space
 it was given, whatever the scroll view was told (a starting width,
 re-tiling, explicit line widths). Every text view is instead sized by
 SwiftUI through `sizeThatFits` (the width offered; the height of its text,
-from `fittingHeight(of:width:)`), exactly like the Response Editor's cells,
+from `fittingHeight(of:width:)`), exactly like “Respond to the comments”'s cells,
 which always wrapped correctly; pages that scroll put it in a SwiftUI
 ScrollView (`FillingScroll`). The decision letter's text view draws its own
 margin of IDs and section names (`LetterNSTextView`, which shifts

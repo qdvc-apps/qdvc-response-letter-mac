@@ -29,8 +29,8 @@ in [docs/DESIGN.md](docs/DESIGN.md).
 - **Overview**: every comment in one table (ID, triage, status, comment,
   ideas, response). Select rows and press ⌘1–⌘3 to triage (⌘0 clears) or
   ⌥⌘1–⌥⌘3 to set the status; the inspector opens the selected comment in
-  the Triage Editor or the Response Editor; double-click opens it in the
-  Response Editor.
+  “Triage the comments” or “Respond to the comments”; double-click opens it in 
+  “Respond to the comments”.
 
 **Workflow**
 
@@ -40,19 +40,19 @@ in [docs/DESIGN.md](docs/DESIGN.md).
   role, title and ID prefix (SE, AE, SIE, DE, TC, RE1, RE2…). Then select
   each comment's text and choose **Mark as Comment** (⌘K). Marked comments
   are highlighted, with their IDs in the margin; double-click one to open
-  it in the Response Editor. **Edit Letter** makes the letter editable
+  it in “Respond to the comments”. **Edit Letter** makes the letter editable
   (to fix a paste, or to paste in a corrected version): marked comments
   follow your edits, comments whose text moved are found again, and on
   Done the app shows Before and Now for any comment whose text you changed
   or deleted and asks what to do.
-- **Triage Editor**: the same kind of table as the Response Editor, with
+- **Triage the comments**: the same kind of table as “Respond to the comments”, with
   the ID, comment, triage and ideas columns, every cell shown in full and
   edited in place. Triage each comment green (easy), yellow (trickier) or
   red (needs discussion with co-authors) from its triage cell or with ⌘1–⌘3
   (⌘0 clears); ideas are dot points, one per line. The inspector has the
   status and related comments (link comments that ask for the same thing,
   such as an associate editor summarising two reviewers).
-- **Response Editor**: the whole response letter as one table, as in a
+- **Respond to the comments**: the whole response letter as one table, as in a
   word processor, so neighbouring comments stay in view. Black bands start
   each section; every cell (comment, ideas, response) is shown in full and
   edited in place, and rows grow as you type. Hide the triage, status or
@@ -209,7 +209,7 @@ not with `swift run`.
 | ⌥⌘↑ / ⌥⌘↓ | Move the comment up / down |
 | ⌘[ / ⌘] | Previous / next comment (on the current page) |
 | ⌘B ⌘I ⌘' ⇧⌘7 | Bold, italic, quoted text, bullets |
-| ⌃⌘1 … ⌃⌘8 | Overview, Decision Letter, Triage Editor, Response Editor, Opening & Closing, Variables, Issues, Traceability |
+| ⌃⌘1 … ⌃⌘8 | Overview, Decision Letter, “Triage the comments”, “Respond to the comments”, Opening & Closing, Variables, Issues, Traceability |
 | ⌥⌘I | Show or hide the inspector |
 | ⌥⌘= | Large text (also the toolbar's text-size button) |
 | ⇧⌘E / ⌥⇧⌘E | Export the response letter / the co-author version |

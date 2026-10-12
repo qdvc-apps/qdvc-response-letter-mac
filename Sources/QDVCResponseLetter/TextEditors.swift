@@ -298,6 +298,43 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
 
     // MARK: Pasteboard
 
+    /// ⌘C, ⌘X, ⌘V and ⌘A are handled here, before anything else can take
+    /// them: in a SwiftUI table, key equivalents don't reliably reach a text
+    /// view through the menus.
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard window?.firstResponder === self,
+              event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+              let key = event.charactersIgnoringModifiers?.lowercased() else {
+            return super.performKeyEquivalent(with: event)
+        }
+        switch key {
+        case "c": copy(nil); return true
+        case "x": cut(nil); return true
+        case "v": paste(nil); return true
+        case "a": selectAll(nil); return true
+        default: return super.performKeyEquivalent(with: event)
+        }
+    }
+
+    override func copy(_ sender: Any?) {
+        guard selectedRange().length > 0 else { return }
+        let pboard = NSPasteboard.general
+        pboard.clearContents()
+        _ = writeSelection(to: pboard, types: writablePasteboardTypes)
+    }
+
+    override func cut(_ sender: Any?) {
+        let range = selectedRange()
+        guard range.length > 0, isEditable else { return }
+        copy(sender)
+        insertText("", replacementRange: range)
+    }
+
+    override func paste(_ sender: Any?) {
+        guard isEditable else { return }
+        _ = readSelection(from: NSPasteboard.general)
+    }
+
     override var writablePasteboardTypes: [NSPasteboard.PasteboardType] {
         isRichEditor ? [.responseMarkup, .string] : [.string]
     }

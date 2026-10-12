@@ -22,11 +22,11 @@ as they are in the Word document, so neighbouring comments stay in view.
     highlighted (in their triage colour, or the accent colour) and IDs and
     section starts in a margin, like line numbers in a code editor. A bar
     at the bottom offers what makes sense for the selection.
-  - **Triage Editor**: the same table as the Response Editor (one
+  - **Triage the comments**: the same table as “Respond to the comments” (one
     component, `CommentTable`, with different columns): ID, comment,
     triage (a dot and its name) and ideas, edited in place; the inspector
     has the status and related comments.
-  - **Response Editor**: the response letter as an editable table, with
+  - **Respond to the comments**: the response letter as an editable table, with
     the exported letter's black section bands (aligned with the comment
     column, as in Word). Cells are NSTextViews that size themselves to
     their text; the row takes the height of its tallest cell. One format
@@ -118,8 +118,8 @@ never lost. Typing has its own undo inside each field.
 Running text (the decision letter, the opening and the closing) sits in a
 centred column at most 1000 points wide (`ReadableColumn.standardWidth`),
 on the same white (black in dark mode) right across: very long lines are
-hard to read, however wide the window. The tables (Overview, Triage Editor,
-Response Editor) use the full width, since they divide it into columns.
+hard to read, however wide the window. The tables (Overview, “Triage the comments”,
+“Respond to the comments”) use the full width, since they divide it into columns.
 
 No page may make the window wider. Menus in the format bar have fixed
 widths (a menu button otherwise takes the width of its longest item, and

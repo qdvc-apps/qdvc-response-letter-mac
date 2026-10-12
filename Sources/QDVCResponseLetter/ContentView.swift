@@ -148,11 +148,11 @@ struct SidebarView: View {
             }
             Section("Workflow") {
                 Label("Decision Letter", systemImage: "doc.plaintext").tag(SidebarItem.decisionLetter)
-                Label("Triage Editor", systemImage: "flag")
+                Label("Triage the comments", systemImage: "flag")
                     .badge(p.count(.none))
                     .help("\(p.count(.none)) comment(s) not yet triaged")
                     .tag(SidebarItem.triageEditor)
-                Label("Response Editor", systemImage: "text.bubble")
+                Label("Respond to the comments", systemImage: "text.bubble")
                     .badge(p.count(.todo))
                     .help("\(p.count(.todo)) response(s) still to do")
                     .tag(SidebarItem.responseEditor)
@@ -202,10 +202,10 @@ struct CommentContextMenu: View {
     var body: some View {
         if keys.count == 1, let key = keys.first {
             if model.selection != .responseEditor {
-                Button("Open in Response Editor") { model.openComment(key) }
+                Button("Respond to This Comment") { model.openComment(key) }
             }
             if model.selection != .triageEditor {
-                Button("Open in Triage Editor") { model.openInTriage(key) }
+                Button("Triage This Comment") { model.openInTriage(key) }
             }
             if model.letter.comments[key]?.source.isEmpty == false {
                 Button("Show in Decision Letter") {

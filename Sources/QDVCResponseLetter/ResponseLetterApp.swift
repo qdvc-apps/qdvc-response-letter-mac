@@ -224,8 +224,8 @@ struct ResponseCommands: Commands {
 
         CommandGroup(before: .sidebar) {
             let pages: [(String, SidebarItem)] = [
-                ("Overview", .overview), ("Decision Letter", .decisionLetter), ("Triage Editor", .triageEditor),
-                ("Response Editor", .responseEditor), ("Opening & Closing", .openingClosing),
+                ("Overview", .overview), ("Decision Letter", .decisionLetter), ("Triage the comments", .triageEditor),
+                ("Respond to the comments", .responseEditor), ("Opening & Closing", .openingClosing),
                 ("Variables", .variables), ("Issues", .issues), ("Traceability", .traceability),
             ]
             ForEach(Array(pages.enumerated()), id: \.offset) { i, page in

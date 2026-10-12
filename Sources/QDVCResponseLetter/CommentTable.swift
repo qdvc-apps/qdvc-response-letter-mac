@@ -234,7 +234,6 @@ struct CommentTableRow: View {
         .overlay(alignment: .bottom) {
             Rectangle().fill(Color(nsColor: .separatorColor)).frame(height: 1)
         }
-        .contextMenu { CommentContextMenu(keys: [key]) }
     }
 
     @ViewBuilder
@@ -256,6 +255,11 @@ struct CommentTableRow: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .contentShape(Rectangle())
+            // Only here: on the whole row it would replace the text views'
+            // own Cut / Copy / Paste menu.
+            .contextMenu { CommentContextMenu(keys: [key]) }
         case .triageDot:
             TriagePopUp(key: key, triage: comment.triage, labelled: false, scale: scale)
                 .padding(.top, 8)

@@ -99,12 +99,12 @@ struct OpenInEditors: View {
     var body: some View {
         HStack {
             if model.selection != .triageEditor {
-                Button("Triage Editor") { model.openInTriage(key) }
-                    .help("Open this comment in the Triage Editor")
+                Button("Triage") { model.openInTriage(key) }
+                    .help("Show this comment in “Triage the comments”")
             }
             if model.selection != .responseEditor {
-                Button("Response Editor") { model.openComment(key) }
-                    .help("Open this comment in the Response Editor")
+                Button("Respond") { model.openComment(key) }
+                    .help("Show this comment in “Respond to the comments”")
             }
         }
     }
@@ -323,7 +323,7 @@ struct LetterSummary: View {
             if model.selection == .triageEditor || model.selection == .overview || model.selection == .traceability {
                 Section {
                     Text(model.selection == .traceability
-                         ? "Select a card to see its comment here; double-click to open it in the Response Editor."
+                         ? "Select a card to see its comment here; double-click to respond to it."
                          : "Select a comment to see it here.")
                         .foregroundStyle(.secondary)
                 }
