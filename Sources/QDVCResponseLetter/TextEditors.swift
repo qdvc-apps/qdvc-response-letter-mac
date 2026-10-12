@@ -494,9 +494,17 @@ final class TextScrollView: NSScrollView {
         }
         if abs(tv.frame.width - size.width) > 0.5 || tv.frame.height < size.height {
             tv.setFrameSize(NSSize(width: size.width, height: max(tv.frame.height, size.height)))
-            if let container = tv.textContainer, let layout = tv.layoutManager {
-                layout.ensureLayout(for: container)
-                tv.sizeToFit()
+        }
+        // Set the line width explicitly rather than trusting the container
+        // to track the text view's width.
+        if let container = tv.textContainer {
+            let lineWidth = max(1, size.width - 2 * tv.textContainerInset.width)
+            if abs(container.containerSize.width - lineWidth) > 0.5 {
+                container.containerSize = NSSize(width: lineWidth, height: CGFloat.greatestFiniteMagnitude)
+                if let layout = tv.layoutManager {
+                    layout.ensureLayout(for: container)
+                    tv.sizeToFit()
+                }
             }
         }
     }

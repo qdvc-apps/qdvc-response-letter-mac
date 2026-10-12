@@ -167,32 +167,34 @@ struct OpeningClosingView: View {
     @State private var closing = EditorHandle()
 
     var body: some View {
-        PaneStack(storageKey: "openingClosing", items: [
-            .init(id: "opening", minHeight: 140, weight: 0.6, view: AnyView(
-            Pane(title: "Before the table") {
-                FormatBar(editor: { opening.textView })
-            } content: {
-                RichTextEditor(
-                    markup: model.letter.opening, size: CGFloat(model.editorFontSize),
-                    tokenSignature: model.tokenSignature, look: { model.look($0) }, handle: opening,
-                    placeholder: "Dear Professor …, thank you for the opportunity to revise our manuscript …",
-                    onChange: { model.setOpening($0) }, onFocus: { model.activeEditor = $0 },
-                    onTokenDoubleClick: { model.openToken($0) }
-                )
-            })),
-            .init(id: "closing", minHeight: 110, weight: 0.4, view: AnyView(
-            Pane(title: "After the table") {
-                FormatBar(editor: { closing.textView })
-            } content: {
-                RichTextEditor(
-                    markup: model.letter.closing, size: CGFloat(model.editorFontSize),
-                    tokenSignature: model.tokenSignature, look: { model.look($0) }, handle: closing,
-                    placeholder: "Thank you again … Yours sincerely, …",
-                    onChange: { model.setClosing($0) }, onFocus: { model.activeEditor = $0 },
-                    onTokenDoubleClick: { model.openToken($0) }
-                )
-            })),
-        ])
+        ReadableColumn {
+            PaneStack(storageKey: "openingClosing", items: [
+                .init(id: "opening", minHeight: 140, weight: 0.6, view: AnyView(
+                Pane(title: "Before the table") {
+                    FormatBar(editor: { opening.textView })
+                } content: {
+                    RichTextEditor(
+                        markup: model.letter.opening, size: CGFloat(model.editorFontSize),
+                        tokenSignature: model.tokenSignature, look: { model.look($0) }, handle: opening,
+                        placeholder: "Dear Professor …, thank you for the opportunity to revise our manuscript …",
+                        onChange: { model.setOpening($0) }, onFocus: { model.activeEditor = $0 },
+                        onTokenDoubleClick: { model.openToken($0) }
+                    )
+                })),
+                .init(id: "closing", minHeight: 110, weight: 0.4, view: AnyView(
+                Pane(title: "After the table") {
+                    FormatBar(editor: { closing.textView })
+                } content: {
+                    RichTextEditor(
+                        markup: model.letter.closing, size: CGFloat(model.editorFontSize),
+                        tokenSignature: model.tokenSignature, look: { model.look($0) }, handle: closing,
+                        placeholder: "Thank you again … Yours sincerely, …",
+                        onChange: { model.setClosing($0) }, onFocus: { model.activeEditor = $0 },
+                        onTokenDoubleClick: { model.openToken($0) }
+                    )
+                })),
+            ])
+        }
     }
 }
 

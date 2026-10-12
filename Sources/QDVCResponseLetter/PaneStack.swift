@@ -116,3 +116,37 @@ struct PaneDivider: View {
         .onDisappear { if hovering { NSCursor.pop() } }
     }
 }
+
+/// Long lines are hard to read: a column at most `maxWidth` wide, centred,
+/// with the under-page grey either side (as in Pages and Preview). The
+/// content gets exactly the column's width and the full height.
+struct ReadableColumn<Content: View>: View {
+    static var standardWidth: CGFloat { 1000 }
+
+    var maxWidth: CGFloat = ReadableColumn.standardWidth
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = min(geo.size.width, maxWidth)
+            ZStack {
+                Color(nsColor: .underPageBackgroundColor)
+                content()
+                    .frame(width: width, height: geo.size.height)
+                    .background(Color(nsColor: .windowBackgroundColor))
+                    .clipped()
+                    .overlay {
+                        if width < geo.size.width {
+                            HStack {
+                                Rectangle().fill(Color(nsColor: .separatorColor)).frame(width: 1)
+                                Spacer()
+                                Rectangle().fill(Color(nsColor: .separatorColor)).frame(width: 1)
+                            }
+                            .allowsHitTesting(false)
+                        }
+                    }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+    }
+}

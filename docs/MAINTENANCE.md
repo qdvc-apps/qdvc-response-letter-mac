@@ -147,9 +147,11 @@ view, and the bars around it, exactly the measured width; a plain VStack in
 the detail column did not keep the text view to the window's width. Bars of
 buttons use `ViewThatFits` with a compact form.
 
-Text views live in `TextScrollView`, which sets the text view to exactly
-the visible width (and at least the visible height) whenever it tiles, so
-text wraps at the pane's edge. Don't give a text view a starting width:
+Pages of running text wrap their content in `ReadableColumn` (centred, at
+most 1000 points). Text views live in `TextScrollView`, which sets the text
+view to exactly the visible width (and at least the visible height) whenever
+it tiles, and sets the text container's line width explicitly rather than
+relying on `widthTracksTextView`, so text wraps at the pane's edge. Don't give a text view a starting width:
 AppKit's autoresizing keeps any difference between it and the scroll view
 (which SwiftUI sizes from zero), and the lines then run off the right.
 

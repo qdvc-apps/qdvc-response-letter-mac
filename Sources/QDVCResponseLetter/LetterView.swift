@@ -13,30 +13,31 @@ struct LetterView: View {
         let editing = model.isEditingLetter
         let current = editing ? nil : model.letter.commentKey(atSourceOffset: model.letterSelection.location)
         let deco = decorations(current: current, edits: editing ? model.letterEdits : [])
-        // Measured, and every part given exactly the width available: the
-        // text view then wraps at the window's edge, and nothing in the bar
-        // below can make the page wider than the window.
+        // The letter in a readable, centred column; the bar below spans the
+        // page, and can't make it wider than the window.
         GeometryReader { geo in
             VStack(spacing: 0) {
-                LetterTextView(
-                    text: editing ? model.letterDraft : model.letter.decisionLetter,
-                    isEditing: editing,
-                    highlights: deco.highlights,
-                    labels: deco.labels,
-                    size: CGFloat(model.editorFontSize),
-                    reveal: model.revealInLetter.flatMap { model.letter.comments[$0]?.source.first }
-                        .map { NSRange(location: $0.location, length: $0.length) },
-                    revealRevision: model.revealRevision,
-                    onSelection: { range in
-                        model.letterSelection = range
-                        if range.length > 0 { model.letterSectionChoice = model.inferredSection(for: range) }
-                    },
-                    onDoubleClickComment: { offset in
-                        guard !model.isEditingLetter else { return }
-                        if let key = model.letter.commentKey(atSourceOffset: offset) { model.openComment(key) }
-                    },
-                    onEdits: { edits, text in model.recordLetterEdits(edits, text: text) }
-                )
+                ReadableColumn {
+                    LetterTextView(
+                        text: editing ? model.letterDraft : model.letter.decisionLetter,
+                        isEditing: editing,
+                        highlights: deco.highlights,
+                        labels: deco.labels,
+                        size: CGFloat(model.editorFontSize),
+                        reveal: model.revealInLetter.flatMap { model.letter.comments[$0]?.source.first }
+                            .map { NSRange(location: $0.location, length: $0.length) },
+                        revealRevision: model.revealRevision,
+                        onSelection: { range in
+                            model.letterSelection = range
+                            if range.length > 0 { model.letterSectionChoice = model.inferredSection(for: range) }
+                        },
+                        onDoubleClickComment: { offset in
+                            guard !model.isEditingLetter else { return }
+                            if let key = model.letter.commentKey(atSourceOffset: offset) { model.openComment(key) }
+                        },
+                        onEdits: { edits, text in model.recordLetterEdits(edits, text: text) }
+                    )
+                }
                 .frame(width: geo.size.width)
                 .frame(maxHeight: .infinity)
                 Divider()
