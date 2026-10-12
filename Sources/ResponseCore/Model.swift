@@ -373,6 +373,8 @@ public struct ResponseLetter: Equatable {
         public var byStatus: [Status: Int] = [:]
         public var byTriage: [Triage: Int] = [:]
 
+        public init() {}
+
         public func count(_ s: Status) -> Int { byStatus[s] ?? 0 }
         public func count(_ t: Triage) -> Int { byTriage[t] ?? 0 }
 

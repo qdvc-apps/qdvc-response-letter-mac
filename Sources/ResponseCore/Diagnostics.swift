@@ -31,6 +31,16 @@ public struct Issue: Identifiable, Equatable, Hashable {
     /// Set for `.pendingReference`.
     public var pending: PendingReference?
 
+    public init(kind: Kind, location: TextLocation? = nil, commentKey: String? = nil, variableKey: String? = nil,
+                message: String, pending: PendingReference? = nil) {
+        self.kind = kind
+        self.location = location
+        self.commentKey = commentKey
+        self.variableKey = variableKey
+        self.message = message
+        self.pending = pending
+    }
+
     public var id: String {
         "\(kind.rawValue)|\(String(describing: location))|\(commentKey ?? "")|\(variableKey ?? "")|\(pending?.id ?? "")|\(message)"
     }

@@ -29,12 +29,23 @@ public struct LoadedWorkspace {
     public var notes: [String]
     /// Parts that were repaired on load and should be written back.
     public var repairedParts: Set<WorkspacePart>
+
+    public init(letter: ResponseLetter, notes: [String], repairedParts: Set<WorkspacePart>) {
+        self.letter = letter
+        self.notes = notes
+        self.repairedParts = repairedParts
+    }
 }
 
 /// Modification date and size of a file, to notice outside changes (Git).
 public struct FileStamp: Equatable {
     public var modified: Date
     public var size: Int
+
+    public init(modified: Date, size: Int) {
+        self.modified = modified
+        self.size = size
+    }
 }
 
 /// A response letter's workspace folder (docs/FILE_FORMAT.md):

@@ -30,6 +30,13 @@ public struct PendingReference: Identifiable, Equatable, Hashable {
     public var context: String
 
     public var id: String { "\(location)#\(ordinal)" }
+
+    public init(location: TextLocation, ordinal: Int, candidates: [String], context: String) {
+        self.location = location
+        self.ordinal = ordinal
+        self.candidates = candidates
+        self.context = context
+    }
 }
 
 /// A comment whose display ID changed.
@@ -37,6 +44,12 @@ public struct Renumbering: Equatable, Hashable {
     public var key: String
     public var old: String
     public var new: String
+
+    public init(key: String, old: String, new: String) {
+        self.key = key
+        self.old = old
+        self.new = new
+    }
 }
 
 public struct SplitResult: Equatable {
@@ -48,11 +61,25 @@ public struct SplitResult: Equatable {
     /// related to them.
     public var relatedKeys: [String]
     public var renumbered: [Renumbering]
+
+    public init(firstKey: String, secondKey: String, pending: [PendingReference], relatedKeys: [String],
+                renumbered: [Renumbering]) {
+        self.firstKey = firstKey
+        self.secondKey = secondKey
+        self.pending = pending
+        self.relatedKeys = relatedKeys
+        self.renumbered = renumbered
+    }
 }
 
 public struct MergeResult: Equatable {
     public var key: String
     public var renumbered: [Renumbering]
+
+    public init(key: String, renumbered: [Renumbering]) {
+        self.key = key
+        self.renumbered = renumbered
+    }
 }
 
 extension ResponseLetter {

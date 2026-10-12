@@ -51,6 +51,7 @@ final class TokenProvider {
 final class TokenAttachment: NSTextAttachment {
     let token: Token
 
+    @MainActor
     init(token: Token, provider: TokenProvider, font: NSFont) {
         self.token = token
         super.init(data: nil, ofType: nil)
@@ -65,6 +66,7 @@ final class TokenCell: NSTextAttachmentCell {
     weak var provider: TokenProvider?
     let textFont: NSFont
 
+    @MainActor
     init(token: Token, provider: TokenProvider, font: NSFont) {
         self.token = token
         self.provider = provider
@@ -150,7 +152,7 @@ enum MarkupConverter {
         return font
     }
 
-    static func paragraphStyle(_ block: BlockKind, bulleted: Bool = false) -> NSParagraphStyle {
+    nonisolated static func paragraphStyle(_ block: BlockKind, bulleted: Bool = false) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
         style.paragraphSpacing = 5
         style.lineHeightMultiple = 1.1
@@ -315,9 +317,9 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
         let sub = storage.attributedSubstring(from: range)
         switch type {
         case .responseMarkup:
-            return pboard.setString(MainActor.assumeIsolated { MarkupConverter.richText(sub).markup }, forType: type)
+            return pboard.setString(MarkupConverter.richText(sub).markup, forType: type)
         case .string:
-            return pboard.setString(MainActor.assumeIsolated { MarkupConverter.displayString(sub) }, forType: .string)
+            return pboard.setString(MarkupConverter.displayString(sub), forType: .string)
         default:
             return super.writeSelection(to: pboard, type: type)
         }
@@ -329,9 +331,7 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
 
     override func readSelection(from pboard: NSPasteboard, type: NSPasteboard.PasteboardType) -> Bool {
         if isRichEditor, type == .responseMarkup, let markup = pboard.string(forType: type), let provider = tokenProvider {
-            let attr = MainActor.assumeIsolated {
-                MarkupConverter.attributed(RichText(markup: markup), size: baseSize, provider: provider)
-            }
+            let attr = MarkupConverter.attributed(RichText(markup: markup), size: baseSize, provider: provider)
             insertText(attr, replacementRange: selectedRange())
             return true
         }
@@ -354,7 +354,7 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
             let bold = a[.rlBold] as? Bool ?? false
             let italic = a[.rlItalic] as? Bool ?? false
             if a[.attachment] == nil {
-                a[.font] = MainActor.assumeIsolated { MarkupConverter.font(bold: bold, italic: italic, size: baseSize) }
+                a[.font] = MarkupConverter.font(bold: bold, italic: italic, size: baseSize)
             }
             storage.setAttributes(a, range: sub)
         }
@@ -369,9 +369,8 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
             var t = typingAttributes
             let on = !(t[key] as? Bool ?? false)
             t[key] = on
-            t[.font] = MainActor.assumeIsolated {
-                MarkupConverter.font(bold: t[.rlBold] as? Bool ?? false, italic: t[.rlItalic] as? Bool ?? false, size: baseSize)
-            }
+            t[.font] = MarkupConverter.font(bold: t[.rlBold] as? Bool ?? false, italic: t[.rlItalic] as? Bool ?? false,
+                                            size: baseSize)
             typingAttributes = t
             return
         }
@@ -391,7 +390,7 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
             let current = (t[.rlBlock] as? String).flatMap(BlockKind.init) ?? .normal
             let new: BlockKind = current == block ? .normal : block
             t[.rlBlock] = new.rawValue
-            t[.paragraphStyle] = MainActor.assumeIsolated { MarkupConverter.paragraphStyle(new) }
+            t[.paragraphStyle] = MarkupConverter.paragraphStyle(new)
             typingAttributes = t
             needsDisplay = true
             return
@@ -403,11 +402,11 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
         let new: BlockKind = all ? .normal : block
         restyle(range) { a in
             a[.rlBlock] = new.rawValue
-            a[.paragraphStyle] = MainActor.assumeIsolated { MarkupConverter.paragraphStyle(new) }
+            a[.paragraphStyle] = MarkupConverter.paragraphStyle(new)
         }
         var t = typingAttributes
         t[.rlBlock] = new.rawValue
-        t[.paragraphStyle] = MainActor.assumeIsolated { MarkupConverter.paragraphStyle(new) }
+        t[.paragraphStyle] = MarkupConverter.paragraphStyle(new)
         typingAttributes = t
         needsDisplay = true
     }
@@ -434,9 +433,7 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
         let t = typingAttributes
         let style = InlineStyle(bold: t[.rlBold] as? Bool ?? false, italic: t[.rlItalic] as? Bool ?? false)
         let block = (t[.rlBlock] as? String).flatMap(BlockKind.init) ?? .normal
-        let s = MainActor.assumeIsolated {
-            MarkupConverter.tokenString(token, style: style, block: block, size: baseSize, provider: provider)
-        }
+        let s = MarkupConverter.tokenString(token, style: style, block: block, size: baseSize, provider: provider)
         window?.makeFirstResponder(self)
         insertText(s, replacementRange: selectedRange())
     }
@@ -445,7 +442,7 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
         guard let storage = textStorage else { return "" }
         let range = selectedRange()
         guard range.length > 0 else { return "" }
-        return MainActor.assumeIsolated { MarkupConverter.displayString(storage.attributedSubstring(from: range)) }
+        return MarkupConverter.displayString(storage.attributedSubstring(from: range))
     }
 
     /// Redraws pills after Variables or numbering change.
@@ -470,7 +467,7 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
     func view(_ view: NSView, stringForToolTip tag: NSView.ToolTipTag, point: NSPoint,
               userData data: UnsafeMutableRawPointer?) -> String {
         guard let token = token(at: point), let provider = tokenProvider else { return "" }
-        return MainActor.assumeIsolated { provider.look(token).help }
+        return provider.look(token).help
     }
 }
 
@@ -632,7 +629,7 @@ struct RichTextEditor: NSViewRepresentable {
                 }
                 if !uniform {
                     let block = BlockKind(rawValue: raw) ?? .normal
-                    let style = MainActor.assumeIsolated { MarkupConverter.paragraphStyle(block) }
+                    let style = MarkupConverter.paragraphStyle(block)
                     textStorage.addAttributes([.rlBlock: raw, .paragraphStyle: style], range: para)
                 }
                 p = NSMaxRange(para)
