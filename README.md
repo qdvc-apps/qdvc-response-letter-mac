@@ -1,10 +1,15 @@
 # QDVC Response Letter for macOS
 
-Write the response letter that goes with a revised journal manuscript. Paste
-the decision letter, mark up the comments from the senior editor, associate
+Write the response letter that goes with a revised journal manuscript.
+
+![Screenshot](docs/screenshot.png)
+
+Paste the decision letter, mark up the comments from the senior editor, associate
 editor and reviewers, triage them, jot down ideas, draft a response to each,
 and export the classic three-column Word table: ID, Editor/Reviewer
-Comments, Response. A native SwiftUI and AppKit app for macOS 14 (Sonoma)
+Comments, Response.
+
+A native SwiftUI and AppKit app for macOS 14 (Sonoma)
 and later.
 
 Each response letter is a plain folder of small YAML and text files, one
