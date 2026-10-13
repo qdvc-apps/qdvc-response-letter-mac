@@ -96,7 +96,7 @@ struct OpeningClosingView: View {
                         markup: model.letter.opening, size: model.textSize,
                         tokenSignature: model.tokenSignature, look: { model.look($0) }, handle: opening,
                         placeholder: "Dear Professor …, thank you for the opportunity to revise our manuscript …",
-                        onChange: { model.setOpening($0) }, onFocus: { model.activeEditor = $0 },
+                        onChange: { model.setOpening($0) }, onFocus: { model.setActiveEditor($0, at: .opening) },
                         onTokenDoubleClick: { model.openToken($0) }
                     )
                     }
@@ -110,7 +110,7 @@ struct OpeningClosingView: View {
                         markup: model.letter.closing, size: model.textSize,
                         tokenSignature: model.tokenSignature, look: { model.look($0) }, handle: closing,
                         placeholder: "Thank you again … Yours sincerely, …",
-                        onChange: { model.setClosing($0) }, onFocus: { model.activeEditor = $0 },
+                        onChange: { model.setClosing($0) }, onFocus: { model.setActiveEditor($0, at: .closing) },
                         onTokenDoubleClick: { model.openToken($0) }
                     )
                     }

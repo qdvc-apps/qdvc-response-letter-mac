@@ -46,6 +46,15 @@ comment" button: a comment missing from the letter is fixed by editing the
 letter (Edit Letter), then marking it. Splitting and merging still change
 how the marked text is divided.
 
+## Inserting Variables and Cross-references
+
+On the pages with editors the inspector has two tabs, Comment and Insert
+(Opening & Closing has only Insert). Insert names the text that will
+receive the insertion (from `AppModel.activeEditorLocation`, set when an
+editor takes the focus), then lists related comments, Variables and all
+comments by section, filtered together. A click inserts at the text cursor;
+the editor keeps its selection while the inspector is clicked.
+
 ## Related column
 
 Both tables show each comment's links, each with the other comment's triage

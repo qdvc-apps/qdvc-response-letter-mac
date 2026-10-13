@@ -51,29 +51,30 @@ final class MakeSampleTests: XCTestCase {
     }
     set(se1, .red, .drafted, ["Reframe around routines (see {{ref:\(ae1)}})", "Write the contribution in two sentences first, then rebuild the intro", "Discuss with Sam and Priya before drafting"],
         "Thank you for this encouraging assessment and for pinpointing the paper's main weakness. We have rebuilt the paper around a single theoretical contribution, which the introduction now states as follows:\n> {{var:\(contribution)}}\nAs suggested by the Associate Editor (see our response to {{ref:\(ae1)}}), we now draw on the literature on organisational routines rather than sociomateriality. The new theoretical background is in {{var:\(theory)}}.")
-    set(se2, .yellow, .drafted, ["Add a coding table", "Describe the three rounds of coding", "Mention the member checks with the maintenance planners"],
+    set(se2, .yellow, .drafted, ["Add a coding table to {{var:\(methods)}}", "Describe the three rounds of coding", "Sample details overlap with {{ref:\(r13)}}", "Mention the member checks with the maintenance planners"],
         "We agree that the analysis was under-described. {{var:\(methods)}} now explains how we moved from the {{var:\(interviews)}} to the three mechanisms, in three steps:\n- open coding of the transcripts and field notes;\n- grouping codes into **second-order themes**, shown in a new coding table (Appendix B);\n- comparing the themes across the three depots to arrive at the mechanisms.\nSee also our response to {{ref:\(r13)}} on the sample.")
-    set(se3, .green, .final, ["Cut the second case vignette", "Merge sections 5.2 and 5.3"],
+    set(se3, .green, .final, ["Now {{var:\(words)}}: cut the second case vignette", "Merge sections 5.2 and 5.3", "Shorter quotes ({{ref:\(r14)}}) save most of it"],
         "The revised manuscript is {{var:\(words)}} including references, within the limit of 11,000. We shortened the findings mainly by shortening the quotations (see our response to {{ref:\(r14)}}).")
-    set(ae1, .red, .drafted, ["Big change: drop sociomateriality", "Routines: Feldman & Pentland; Pentland et al. on routine dynamics"],
+    set(ae1, .red, .drafted, ["**Big change:** drop sociomateriality (also asked in {{ref:\(r12)}} and {{ref:\(r21)}})", "Routines: Feldman & Pentland; Pentland et al. on *routine dynamics*", "New framing goes in {{var:\(theory)}}"],
         "We are grateful for this clear steer. We have removed the sociomateriality framing and now build on the literature on routine dynamics, which, as you suggest, fits our data much better. The new framing is set out in {{var:\(theory)}}. This also addresses the concerns raised in {{ref:\(r12)}} and {{ref:\(r21)}}.")
-    set(ae2, .yellow, .todo, ["New paragraph in the discussion on boundary conditions", "Hierarchy, safety regulation, asset age"], "")
+    set(ae2, .yellow, .todo, ["New paragraph in the discussion on boundary conditions", "Hierarchy, safety regulation, asset age", "Tie to the process model ({{var:\(model)}})"], "")
     set(ae3, .green, .final, [],
         "Both the abstract and the introduction now state the contribution in one sentence:\n> {{var:\(contribution)}}")
-    set(r11, .yellow, .drafted, ["Settle on maintenance work, not data governance"],
+    set(r11, .yellow, .drafted, ["Settle on maintenance work, not data governance", "Check the intro still matches {{var:\(contribution)}}"],
         "Thank you. We have settled on the first question, how digital twins change maintenance work, and removed the material on data governance from the discussion.")
     set(r12, .red, .drafted, ["Same as {{ref:\(ae1)}}"], "Please see our response to {{ref:\(ae1)}}.")
     set(r13, .green, .final, ["It's {{var:\(interviews)}}: fix the 'around fifty' on p. 11"],
         "We conducted {{var:\(interviews)}} between March 2024 and June 2025, with maintenance planners, technicians, data engineers and managers. The \"around fifty\" was an error, now corrected. A new table in {{var:\(methods)}} lists the interviews by role and depot.")
     set(r14, .green, .drafted, [], "We have shortened every quotation in the findings to at most four lines and added more of our own interpretation around them.")
-    set(r15, .green, .todo, ["Search-and-replace 'digital shadow'", "Add a footnote on the distinction"], "")
+    set(r15, .none, .todo, [], "")
     set(r21, .red, .drafted, ["Same as {{ref:\(ae1)}}"], "Please see our response to {{ref:\(ae1)}}.")
-    set(r22, .yellow, .todo, ["Draw the process model", "Mechanisms are partly sequential: anticipating enables rehearsing"],
+    set(r22, .yellow, .drafted, ["Draw the process model as {{var:\(model)}}", "Mechanisms are partly sequential: anticipating enables rehearsing", "Fits the routines framing in {{ref:\(ae1)}}"],
         "This is a very helpful suggestion. We now present a process model ({{var:\(model)}}) that shows how the three mechanisms relate.")
-    set(r23, .yellow, .todo, ["Ask Priya for the OM references"], "")
+    set(r23, .none, .todo, ["Ask Priya for the OM references"], "")
     set(r24, .green, .final, [], "We have split Table 3 into Tables 3 and 4.")
     l.setRelated(ae1, r12, true); l.setRelated(ae1, r21, true); l.setRelated(se1, ae1, true)
     l.setRelated(se2, r13, true); l.setRelated(se3, r14, true); l.setRelated(se1, ae3, true)
+    l.setRelated(ae2, r22, true); l.setRelated(r11, se1, true)
     l.opening = "Dear Professor Lindqvist,\nThank you for the opportunity to revise our manuscript, *Digital twins and the reorganisation of maintenance work: A field study*. We are grateful to you, the Associate Editor and the two reviewers for their careful and constructive comments.\nThe main changes are a new theoretical framing around routine dynamics, a fuller account of our analysis, and a shorter paper of {{var:\(words)}}. Below we respond to each comment in turn."
     l.closing = "Thank you again for your guidance. We look forward to hearing from you.\nYours sincerely,\nThe authors"
     try Workspace.save(l, parts: Workspace.allParts(of: l), to: out)

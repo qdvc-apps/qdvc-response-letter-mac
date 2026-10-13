@@ -119,8 +119,10 @@ final class AppModel {
     private(set) var recentWorkspaces: [URL] = []
 
     @ObservationIgnored weak var undoManager: UndoManager?
-    /// The response editor last focused (for Insert Variable and friends).
+    /// The editor last focused (for Insert Variable and friends), and which
+    /// text it holds (shown by the inspector's Insert tab).
     @ObservationIgnored weak var activeEditor: EditorTextView?
+    var activeEditorLocation: TextLocation?
     /// The editor a new Variable from the selection goes into.
     @ObservationIgnored weak var variableTarget: EditorTextView?
     @ObservationIgnored private var dirty = Set<WorkspacePart>()
@@ -469,6 +471,20 @@ final class AppModel {
             scrollRevision += 1
         default: openComment(key)
         }
+    }
+
+    /// Called when an editor that can take Variables and Cross-references
+    /// gets the focus.
+    func setActiveEditor(_ view: EditorTextView, at location: TextLocation) {
+        activeEditor = view
+        guard activeEditorLocation != location else { return }
+        DispatchQueue.main.async { [weak self] in self?.activeEditorLocation = location }
+    }
+
+    /// Where an insertion would go, if an editor is ready for one.
+    var insertionTarget: TextLocation? {
+        guard let editor = activeEditor, editor.window != nil, editor.isEditable else { return nil }
+        return activeEditorLocation
     }
 
     /// Called when an editor in a Response Editor row gets the focus.

@@ -1,10 +1,11 @@
 triage: yellow
 status: drafted
 source: [2207+174]
-related: []
+related: [c-20b157e0]
 text: |-
   1. The research question shifts between the introduction (how digital twins change maintenance work) and the discussion (how organisations govern data). Please settle on one.
 ideas:
   - Settle on maintenance work, not data governance
+  - Check the intro still matches {{var:v-c8e33976}}
 response: |-
   Thank you. We have settled on the first question, how digital twins change maintenance work, and removed the material on data governance from the discussion.

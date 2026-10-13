@@ -71,6 +71,12 @@ in [docs/DESIGN.md](docs/DESIGN.md).
     and choose Variable › New Variable from Selection to make one.
   - **Cross-references** to other comments ("see our response to AE-03"),
     which always show the comment's current ID.
+
+  Both can be inserted from the Format menu, the format bar, or the
+  inspector's **Insert** tab: it says where the insertion will go (the
+  response or ideas you are editing, the opening or the closing), and lists
+  the comment's related comments first, then the Variables, then every
+  comment by section, with one filter for all; click one to insert it.
 - **Opening & Closing**: the text before and after the table ("Dear
   Professor…").
 
@@ -171,8 +177,13 @@ contains `Package.swift`), pick the **QDVCResponseLetter** scheme and press
 
 A ready-made `sample-workspace/` is included to try the app straight away
 (File → Open Response Letter…): a decision letter with a senior editor, an
-associate editor and two reviewers, 15 comments at various stages, six
-Variables and a few cross-references. Opening an empty folder offers to
+associate editor and two reviewers, and 15 comments at every stage. All
+three triage colours are used, two comments are not yet triaged, and some
+triaged comments have no ideas yet, so both shades of the Triage bar show.
+Responses are final, drafted or still to do. Six Variables appear in
+responses, ideas and the opening, alongside cross-references in responses
+and ideas and related links (Traceability has plenty to draw); quoted text,
+bullets, bold and italic all appear. Opening an empty folder offers to
 start a response letter there.
 
 ## Signing without a paid account

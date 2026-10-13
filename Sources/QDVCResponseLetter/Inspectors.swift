@@ -77,10 +77,42 @@ struct FormatBar: View {
 
 // MARK: - Inspector
 
+enum InspectorTab: String {
+    case comment, insert
+}
+
+/// The inspector. On the pages with editors it has two tabs: the comment,
+/// and Insert (Variables and Cross-references, for the text being edited).
+/// Opening & Closing has only Insert.
 struct InspectorView: View {
     @Environment(AppModel.self) private var model
+    @AppStorage("inspector.tab") private var tab = InspectorTab.comment
 
     var body: some View {
+        switch model.selection {
+        case .openingClosing?:
+            InsertPanel()
+        case .triageEditor?, .responseEditor?:
+            VStack(spacing: 0) {
+                Picker("", selection: $tab) {
+                    Text("Comment").tag(InspectorTab.comment)
+                    Text("Insert").tag(InspectorTab.insert)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .help("Insert: Variables and Cross-references for the text you are editing")
+                Divider()
+                if tab == .insert { InsertPanel() } else { commentContent }
+            }
+        default:
+            commentContent
+        }
+    }
+
+    @ViewBuilder
+    private var commentContent: some View {
         if let key = model.selectedCommentKey, model.letter.comments[key] != nil {
             if model.selection == .triageEditor {
                 TriageInspector(key: key)
@@ -356,5 +388,128 @@ struct LetterSummary: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - Insert
+
+/// Variables and Cross-references to insert, with one click, where the text
+/// cursor is (in a response, an idea, the opening or the closing): related
+/// comments first, then Variables, then every comment by section. One
+/// filter searches them all.
+struct InsertPanel: View {
+    @Environment(AppModel.self) private var model
+    @State private var query = ""
+
+    var body: some View {
+        let ids = model.ids
+        let target = model.insertionTarget
+        let own = target.flatMap(ownKey)
+        let related = own.flatMap { model.letter.comments[$0]?.related } ?? []
+        let variables = model.letter.variables.filter { v in
+            query.isEmpty || v.name.localizedCaseInsensitiveContains(query) || v.value.localizedCaseInsensitiveContains(query)
+        }
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Label(targetText(target, ids: ids), systemImage: target == nil ? "cursorarrow.click" : "text.cursor")
+                    .font(.callout)
+                    .foregroundStyle(target == nil ? .secondary : .primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                TextField("Filter", text: $query, prompt: Text("Filter Variables and comments"))
+                    .textFieldStyle(.roundedBorder)
+            }
+            .padding(12)
+            Divider()
+            List {
+                let relatedKeys = related.filter { matches($0, ids: ids) }
+                if !relatedKeys.isEmpty {
+                    Section("Related to \(own.map { ids[$0] ?? "?" } ?? "")") {
+                        ForEach(relatedKeys, id: \.self) { k in commentRow(k, ids: ids) }
+                    }
+                }
+                Section("Variables") {
+                    ForEach(variables) { v in
+                        Button {
+                            model.insertVariable(v.key)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(v.name).fontWeight(.medium)
+                                Text(v.value.isEmpty ? "No value yet" : v.value)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Insert “\(v.name)”")
+                    }
+                    if variables.isEmpty {
+                        Text(query.isEmpty ? "No Variables yet." : "No Variables match.")
+                            .foregroundStyle(.secondary)
+                    }
+                    Button("New Variable from Selection…") { model.beginNewVariable() }
+                        .buttonStyle(.link)
+                }
+                ForEach(model.letter.sections) { section in
+                    let keys = section.commentKeys.filter { $0 != own && matches($0, ids: ids) }
+                    if !keys.isEmpty {
+                        Section(section.title) {
+                            ForEach(keys, id: \.self) { k in commentRow(k, ids: ids) }
+                        }
+                    }
+                }
+            }
+            .listStyle(.inset)
+            .disabled(target == nil)
+            .opacity(target == nil ? 0.6 : 1)
+        }
+    }
+
+    /// A comment to cross-reference: its triage, ID and an excerpt.
+    func commentRow(_ key: String, ids: [String: String]) -> some View {
+        let c = model.letter.comments[key]
+        return Button {
+            model.insertReference(key)
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                TriageDot(triage: c?.triage ?? .none, size: 8)
+                Text(ids[key] ?? "?").font(.system(.body, design: .monospaced)).fontWeight(.medium)
+                Text(TextTools.excerpt(c?.text ?? "", limit: 90))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Insert a cross-reference to \(ids[key] ?? "?")")
+    }
+
+    func matches(_ key: String, ids: [String: String]) -> Bool {
+        guard !query.isEmpty else { return true }
+        if (ids[key] ?? "").localizedCaseInsensitiveContains(query) { return true }
+        return model.letter.comments[key]?.text.localizedCaseInsensitiveContains(query) ?? false
+    }
+
+    /// The comment whose response or ideas are being edited (it is not
+    /// offered as a cross-reference to itself).
+    func ownKey(_ location: TextLocation) -> String? {
+        switch location {
+        case .response(let k), .ideas(let k): return k
+        case .opening, .closing: return nil
+        }
+    }
+
+    func targetText(_ location: TextLocation?, ids: [String: String]) -> String {
+        switch location {
+        case .response(let k)?: return "Inserts into the response to \(ids[k] ?? "?")"
+        case .ideas(let k)?: return "Inserts into the ideas for \(ids[k] ?? "?")"
+        case .opening?: return "Inserts into the opening"
+        case .closing?: return "Inserts into the closing"
+        case nil: return "Click where it should go: in a response, an idea, the opening or the closing."
+        }
     }
 }

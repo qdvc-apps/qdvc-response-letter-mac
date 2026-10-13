@@ -289,7 +289,7 @@ struct CommentTableRow: View {
                 look: { model.look($0) }, placeholder: "Ideas, one per line",
                 onChange: { model.setIdeas(key, $0) },
                 onFocus: { view in
-                    model.activeEditor = view
+                    model.setActiveEditor(view, at: .ideas(key))
                     model.focusRow(key)
                 },
                 onTokenDoubleClick: { model.openToken($0) },
@@ -317,7 +317,7 @@ struct CommentTableRow: View {
                 look: { model.look($0) }, placeholder: "Response",
                 onChange: { model.setResponse(key, $0) },
                 onFocus: { view in
-                    model.activeEditor = view
+                    model.setActiveEditor(view, at: .response(key))
                     model.focusRow(key)
                 },
                 onTokenDoubleClick: { model.openToken($0) }

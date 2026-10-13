@@ -84,8 +84,8 @@ the main window hand over to each other by watching
 `PageViews` (Overview, “Triage the comments”, Opening & Closing, Variables,
 Issues), `CommentTable` (the editable table behind both “Triage the comments” and 
 “Respond to the comments”; `TableLayout` sets each one's columns), `Traceability` (the link
-map, from `ResponseLetter.links()`), `Inspectors` (the format bar and one
-inspector per page), `LetterView` (decision letter, gutter), `Sheets` (and the
+map, from `ResponseLetter.links()`), `Inspectors` (the format bar, one
+inspector per page, and the Insert tab, `InsertPanel`), `LetterView` (decision letter, gutter), `Sheets` (and the
 Settings window), `TextEditors` (below), `PaneStack` (resizable stacked
 panes), `Style`.
 
