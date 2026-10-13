@@ -1,0 +1,10 @@
+triage: green
+status: drafted
+source: [3929+271]
+related: []
+text: |-
+  To sum up: my main reservations are the theoretical lens (point 1) and how the three mechanisms fit together (point 2). With those addressed, and the discussion connected to the operations management literature (point 3), I think the paper could make a real contribution.
+ideas:
+  - "Lens: {{ref:c-aefa4cb4}}; mechanisms: {{ref:c-12000d0e}}; operations management: {{ref:c-4c2de7e0}}"
+response: |-
+  We are grateful for this summary. We take these points in turn: the theoretical lens in our response to {{ref:c-aefa4cb4}}, how the mechanisms fit together in {{ref:c-12000d0e}}, and the operations management literature in {{ref:c-4c2de7e0}}.

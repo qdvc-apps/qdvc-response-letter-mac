@@ -40,6 +40,8 @@ This paper studies the introduction of a digital twin in the maintenance functio
 
 5. Minor: the paper uses "digital twin" and "digital shadow" interchangeably. These are distinct concepts in the engineering literature.
 
+In summary, points 1 and 2 are my main concerns: the paper needs one clear research question and a theoretical lens that does real work in the findings. Points 3 to 5 should be straightforward to address.
+
 Reviewer #2
 
 The paper addresses an important and timely topic. My comments are mostly about theory.
@@ -51,6 +53,8 @@ The paper addresses an important and timely topic. My comments are mostly about 
 3. The discussion should engage with the work on predictive maintenance in operations management, which has studied similar settings.
 
 4. Table 3 is hard to read. Consider splitting it into two tables.
+
+To sum up: my main reservations are the theoretical lens (point 1) and how the three mechanisms fit together (point 2). With those addressed, and the discussion connected to the operations management literature (point 3), I think the paper could make a real contribution.
 
 I look forward to reading a revised version.
 

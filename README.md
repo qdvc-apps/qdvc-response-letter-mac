@@ -60,8 +60,10 @@ in [docs/DESIGN.md](docs/DESIGN.md).
   each section; every cell (comment, ideas, response) is shown in full and
   edited in place, and rows grow as you type. The ideas (written while
   triaging) are shown for reference, read-only but selectable; the Related
-  column lists related comments and cross-references either way, each with
-  the other comment's triage colour, and clicking one goes to it. Hide the
+  column shows each linked comment once, with the other comment's triage
+  colour: → if this comment mentions it, ← if it mentions this one, ↔ if
+  both, a link icon if they are only marked related; clicking one goes to
+  it. Hide the
   triage, status, ideas or related columns from Columns. Responses have bold (⌘B), italic (⌘I),
   quoted manuscript text (⌘') and bullets (⇧⌘7), plus two kinds of linked
   text, shown as pills:
@@ -177,12 +179,16 @@ contains `Package.swift`), pick the **QDVCResponseLetter** scheme and press
 
 A ready-made `sample-workspace/` is included to try the app straight away
 (File → Open Response Letter…): a decision letter with a senior editor, an
-associate editor and two reviewers, and 15 comments at every stage. All
+associate editor and two reviewers, and 17 comments at every stage,
+including each reviewer's closing summary, whose ideas and response
+cross-reference the points it sums up. All
 three triage colours are used, two comments are not yet triaged, and some
 triaged comments have no ideas yet, so both shades of the Triage bar show.
 Responses are final, drafted or still to do. Six Variables appear in
 responses, ideas and the opening, alongside cross-references in responses
-and ideas and related links (Traceability has plenty to draw); quoted text,
+and ideas (some two-way) and a few related links where no cross-reference
+already links two comments (Traceability has plenty to draw); one Variable
+is a quotation long enough to wrap; quoted text,
 bullets, bold and italic all appear. Opening an empty folder offers to
 start a response letter there.
 

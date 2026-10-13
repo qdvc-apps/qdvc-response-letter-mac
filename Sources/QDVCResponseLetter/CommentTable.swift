@@ -140,7 +140,7 @@ struct CommentTableRows: View {
     var body: some View {
         let ids = model.ids
         let flagged = Set(model.issues.filter(\.kind.isBlocking).compactMap(\.commentKey))
-        let links = LinkChip.byComment(model.letter.links())
+        let links = LinkChip.byComment(model.letter.links(), order: model.letter.orderedCommentKeys)
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
                 LazyVStack(alignment: .leading, spacing: 0) {
@@ -462,45 +462,60 @@ struct TriageEditorView: View {
     }
 }
 
-// MARK: - Links column
+// MARK: - Related column
 
-/// A link from one comment to another, as shown in the Links column.
+/// Another comment linked to this one, as one chip in the Related column:
+/// however many ways they are linked (related, a mention either way, in the
+/// ideas or the response), each other comment appears once.
 struct LinkChip: Identifiable, Equatable {
-    enum Kind: Equatable {
-        /// Related, either way round.
-        case related
-        /// This comment's response mentions the other.
-        case mentions
-        /// The other comment's response mentions this one.
-        case mentionedBy
-        /// A mention still undecided after a split.
-        case pending
+    var other: String
+    /// Marked as related.
+    var related = false
+    /// This comment's response or ideas mention the other.
+    var mentions = false
+    /// The other comment's response or ideas mention this one.
+    var mentionedBy = false
+    /// A mention still undecided after a split.
+    var pending = false
+
+    var id: String { other }
+
+    enum Look { case pending, both, mentions, mentionedBy, related }
+
+    /// What the chip shows: the strongest kind of link.
+    var look: Look {
+        if pending { return .pending }
+        if mentions && mentionedBy { return .both }
+        if mentions { return .mentions }
+        if mentionedBy { return .mentionedBy }
+        return .related
     }
 
-    var other: String
-    var kind: Kind
-
-    var id: String { "\(other)-\(kind)" }
-
-    /// The chips for every comment, from the letter's links.
-    static func byComment(_ links: [CommentLink]) -> [String: [LinkChip]] {
-        var result: [String: [LinkChip]] = [:]
-        func add(_ key: String, _ chip: LinkChip) {
-            if !(result[key]?.contains(chip) ?? false) { result[key, default: []].append(chip) }
+    /// The chips for every comment, in letter order of the other comment.
+    static func byComment(_ links: [CommentLink], order: [String]) -> [String: [LinkChip]] {
+        var chips: [String: [String: LinkChip]] = [:]
+        func update(_ key: String, _ other: String, _ change: (inout LinkChip) -> Void) {
+            var chip = chips[key]?[other] ?? LinkChip(other: other)
+            change(&chip)
+            chips[key, default: [:]][other] = chip
         }
         for link in links {
             switch link.kind {
             case .related:
-                add(link.from, LinkChip(other: link.to, kind: .related))
-                add(link.to, LinkChip(other: link.from, kind: .related))
+                update(link.from, link.to) { $0.related = true }
+                update(link.to, link.from) { $0.related = true }
             case .reference:
-                add(link.from, LinkChip(other: link.to, kind: .mentions))
-                add(link.to, LinkChip(other: link.from, kind: .mentionedBy))
+                update(link.from, link.to) { $0.mentions = true }
+                update(link.to, link.from) { $0.mentionedBy = true }
             case .pendingReference:
-                add(link.from, LinkChip(other: link.to, kind: .pending))
+                update(link.from, link.to) { $0.pending = true }
             }
         }
-        return result
+        var position: [String: Int] = [:]
+        for (i, k) in order.enumerated() { position[k] = i }
+        return chips.mapValues { byOther in
+            byOther.values.sorted { (position[$0.other] ?? .max) < (position[$1.other] ?? .max) }
+        }
     }
 }
 
@@ -522,9 +537,9 @@ struct LinkChips: View {
                         model.reveal(chip.other)
                     } label: {
                         HStack(spacing: 3) {
-                            Image(systemName: symbol(chip.kind))
+                            Image(systemName: symbol(chip.look))
                                 .font(.system(size: 9 * scale, weight: .semibold))
-                                .foregroundStyle(tint(chip.kind))
+                                .foregroundStyle(tint(chip.look))
                             if let triage = model.letter.comments[chip.other]?.triage, triage != .none {
                                 TriageDot(triage: triage, size: 7 * scale)
                             }
@@ -532,38 +547,44 @@ struct LinkChips: View {
                         }
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
-                        .background(Capsule().fill(tint(chip.kind).opacity(0.12)))
+                        .background(Capsule().fill(tint(chip.look).opacity(0.12)))
                     }
                     .buttonStyle(.plain)
-                    .help(help(chip.kind, id))
+                    .help(help(chip, id))
                 }
             }
         }
     }
 
-    func symbol(_ kind: LinkChip.Kind) -> String {
-        switch kind {
+    func symbol(_ look: LinkChip.Look) -> String {
+        switch look {
         case .related: return "link"
         case .mentions: return "arrow.right"
         case .mentionedBy: return "arrow.left"
+        case .both: return "arrow.left.arrow.right"
         case .pending: return "questionmark"
         }
     }
 
-    func tint(_ kind: LinkChip.Kind) -> Color {
-        switch kind {
+    func tint(_ look: LinkChip.Look) -> Color {
+        switch look {
         case .related: return .secondary
-        case .mentions, .mentionedBy: return .indigo
+        case .mentions, .mentionedBy, .both: return .indigo
         case .pending: return .orange
         }
     }
 
-    func help(_ kind: LinkChip.Kind, _ id: String) -> String {
-        switch kind {
-        case .related: return "Related to \(id). Click to go to it."
-        case .mentions: return "This response mentions \(id). Click to go to it."
-        case .mentionedBy: return "Mentioned in the response to \(id). Click to go to it."
-        case .pending: return "This response mentions \(id) or another part of a split comment: decide which in Issues."
+    func help(_ chip: LinkChip, _ id: String) -> String {
+        var parts: [String] = []
+        if chip.pending { parts.append("A mention of \(id) (or another part of a split comment) needs a decision in Issues.") }
+        if chip.mentions && chip.mentionedBy {
+            parts.append("This comment and \(id) mention each other.")
+        } else if chip.mentions {
+            parts.append("This comment's response or ideas mention \(id).")
+        } else if chip.mentionedBy {
+            parts.append("\(id)'s response or ideas mention this comment.")
         }
+        if chip.related { parts.append("Marked as related.") }
+        return (parts + ["Click to go to \(id)."]).joined(separator: " ")
     }
 }

@@ -1,0 +1,12 @@
+triage: red
+status: drafted
+source: [1428+287]
+related: []
+text: |-
+  1. Both reviewers question the framing around sociomateriality (R1 comment 2, R2 comment 1). I share their view that the paper does not need this framing and that it obscures your contribution. Consider building instead on the literature on routines, which seems to fit your data better.
+ideas:
+  - "**Big change:** drop sociomateriality (also asked in {{ref:c-c571dc00}} and {{ref:c-aefa4cb4}})"
+  - "Routines: Feldman & Pentland; Pentland et al. on *routine dynamics*"
+  - New framing goes in {{var:v-92b890f9}}
+response: |-
+  We are grateful for this clear steer. We have removed the sociomateriality framing and now build on the literature on routine dynamics, which, as you suggest, fits our data much better. The new framing is set out in {{var:v-92b890f9}}. This also addresses the concerns raised in {{ref:c-c571dc00}} and {{ref:c-aefa4cb4}}.

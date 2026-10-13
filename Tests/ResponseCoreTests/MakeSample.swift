@@ -37,6 +37,9 @@ final class MakeSampleTests: XCTestCase {
     let r22 = try mark("2. The three mechanisms (anticipating, rehearsing and deferring) are interesting, but it is not clear how they relate to each other. Are they sequential? Do they reinforce one another? A process model would help.", r2)
     let r23 = try mark("3. The discussion should engage with the work on predictive maintenance in operations management, which has studied similar settings.", r2)
     let r24 = try mark("4. Table 3 is hard to read. Consider splitting it into two tables.", r2)
+    // Reviewers often close with a summary that refers back to their points.
+    let r16 = try mark("In summary, points 1 and 2 are my main concerns: the paper needs one clear research question and a theoretical lens that does real work in the findings. Points 3 to 5 should be straightforward to address.", r1)
+    let r25 = try mark("To sum up: my main reservations are the theoretical lens (point 1) and how the three mechanisms fit together (point 2). With those addressed, and the discussion connected to the operations management literature (point 3), I think the paper could make a real contribution.", r2)
 
     let words = l.addVariable(name: "Word count", value: "10,940 words")
     let interviews = l.addVariable(name: "Interviews", value: "47 semi-structured interviews")
@@ -72,9 +75,18 @@ final class MakeSampleTests: XCTestCase {
         "This is a very helpful suggestion. We now present a process model ({{var:\(model)}}) that shows how the three mechanisms relate.")
     set(r23, .none, .todo, ["Ask Priya for the OM references"], "")
     set(r24, .green, .final, [], "We have split Table 3 into Tables 3 and 4.")
+    set(r16, .green, .final, ["Main concerns: {{ref:\(r11)}} and {{ref:\(r12)}}", "Points 3 to 5: {{ref:\(r13)}}, {{ref:\(r14)}}, {{ref:\(r15)}}"],
+        "Thank you for this helpful summary. We address your two main concerns in our responses to {{ref:\(r11)}} (the research question) and {{ref:\(r12)}} (the theoretical lens), and the remaining points in our responses to {{ref:\(r13)}}, {{ref:\(r14)}} and {{ref:\(r15)}}.")
+    set(r25, .green, .drafted, ["Lens: {{ref:\(r21)}}; mechanisms: {{ref:\(r22)}}; operations management: {{ref:\(r23)}}"],
+        "We are grateful for this summary. We take these points in turn: the theoretical lens in our response to {{ref:\(r21)}}, how the mechanisms fit together in {{ref:\(r22)}}, and the operations management literature in {{ref:\(r23)}}.")
     l.setRelated(ae1, r12, true); l.setRelated(ae1, r21, true); l.setRelated(se1, ae1, true)
     l.setRelated(se2, r13, true); l.setRelated(se3, r14, true); l.setRelated(se1, ae3, true)
     l.setRelated(ae2, r22, true); l.setRelated(r11, se1, true)
+    // Related links only where no cross-reference already links the two.
+    let referenced = Set(l.links().filter { $0.kind == .reference }.map { [$0.from, $0.to].sorted() })
+    for c in l.orderedComments {
+        for r in c.related where referenced.contains([c.key, r].sorted()) { l.setRelated(c.key, r, false) }
+    }
     l.opening = "Dear Professor Lindqvist,\nThank you for the opportunity to revise our manuscript, *Digital twins and the reorganisation of maintenance work: A field study*. We are grateful to you, the Associate Editor and the two reviewers for their careful and constructive comments.\nThe main changes are a new theoretical framing around routine dynamics, a fuller account of our analysis, and a shorter paper of {{var:\(words)}}. Below we respond to each comment in turn."
     l.closing = "Thank you again for your guidance. We look forward to hearing from you.\nYours sincerely,\nThe authors"
     try Workspace.save(l, parts: Workspace.allParts(of: l), to: out)

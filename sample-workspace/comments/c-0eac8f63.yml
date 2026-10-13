@@ -1,0 +1,10 @@
+triage: green
+status: final
+source: [2543+192]
+related: []
+text: |-
+  3. I would like to know more about the sample. How many interviews were conducted, with whom, and over what period? The paper mentions "around fifty" interviews in one place and 47 in another.
+ideas:
+  - "It's {{var:v-4d331356}}: fix the 'around fifty' on p. 11"
+response: |-
+  We conducted {{var:v-4d331356}} between March 2024 and June 2025, with maintenance planners, technicians, data engineers and managers. The "around fifty" was an error, now corrected. A new table in {{var:v-967d5e40}} lists the interviews by role and depot.

@@ -1,11 +1,11 @@
 triage: yellow
 status: todo
 source: [1717+175]
-related: [c-fb5bd1f0]
+related: [c-12000d0e]
 text: |-
   2. The paper needs a clearer account of the boundary conditions of your findings. Would the same mechanisms appear in a firm with a less hierarchical maintenance organisation?
 ideas:
   - New paragraph in the discussion on boundary conditions
   - Hierarchy, safety regulation, asset age
-  - Tie to the process model ({{var:v-08c71bbb}})
+  - Tie to the process model ({{var:v-6ea4b481}})
 response: ""

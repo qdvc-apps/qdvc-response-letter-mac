@@ -1,17 +1,17 @@
 triage: yellow
 status: drafted
 source: [1006+165]
-related: [c-a91ccf74]
+related: []
 text: |-
   Second, the methods section needs to say much more about how the data were analysed. How did you move from interview transcripts to the three mechanisms in Figure 2?
 ideas:
-  - Add a coding table to {{var:v-6a9512f4}}
+  - Add a coding table to {{var:v-967d5e40}}
   - Describe the three rounds of coding
-  - Sample details overlap with {{ref:c-a91ccf74}}
+  - Sample details overlap with {{ref:c-0eac8f63}}
   - Mention the member checks with the maintenance planners
 response: |-
-  We agree that the analysis was under-described. {{var:v-6a9512f4}} now explains how we moved from the {{var:v-90664903}} to the three mechanisms, in three steps:
+  We agree that the analysis was under-described. {{var:v-967d5e40}} now explains how we moved from the {{var:v-4d331356}} to the three mechanisms, in three steps:
   - open coding of the transcripts and field notes;
   - grouping codes into **second-order themes**, shown in a new coding table (Appendix B);
   - comparing the themes across the three depots to arrive at the mechanisms.
-  See also our response to {{ref:c-a91ccf74}} on the sample.
+  See also our response to {{ref:c-0eac8f63}} on the sample.

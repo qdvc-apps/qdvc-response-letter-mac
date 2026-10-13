@@ -46,6 +46,13 @@ comment" button: a comment missing from the letter is fixed by editing the
 letter (Edit Letter), then marking it. Splitting and merging still change
 how the marked text is divided.
 
+## Long Variables
+
+A pill is one unit, so it cannot break across lines like ordinary text. A
+Variable too long for the line (a quotation from the manuscript) is drawn
+as a box as wide as the line, its text wrapped inside
+(`TokenCell.cellFrame(for:proposedLineFragment:…)`).
+
 ## Inserting Variables and Cross-references
 
 On the pages with editors the inspector has two tabs, Comment and Insert
@@ -57,10 +64,12 @@ the editor keeps its selection while the inspector is clicked.
 
 ## Related column
 
-Both tables show each comment's links, each with the other comment's triage
-dot: related comments (a link icon),
-comments its response mentions (→), comments whose responses mention it
-(←) and undecided mentions after a split (orange ?). Clicking one goes to
+Both tables show each comment's links: one chip per other comment, with
+its triage dot, however many ways the two are linked (a mention in the
+ideas and in the response count once). The chip shows the strongest link:
+an undecided mention after a split (orange ?), mentions both ways (↔),
+this comment mentioning the other (→), the other mentioning this one (←),
+or only marked related (a link icon); its tooltip lists them all. Clicking one goes to
 that comment on the same page. On "Respond to the comments" the ideas are
 read-only (selectable): they belong to triage. Ideas are lines of markup, so
 they can hold Variables and Cross-references (renumbering, splits, merges

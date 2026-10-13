@@ -1,12 +1,12 @@
 triage: yellow
 status: drafted
-source: [3306+212]
-related: [c-3d9e353b]
+source: [3512+212]
+related: [c-ef618293]
 text: |-
   2. The three mechanisms (anticipating, rehearsing and deferring) are interesting, but it is not clear how they relate to each other. Are they sequential? Do they reinforce one another? A process model would help.
 ideas:
-  - Draw the process model as {{var:v-08c71bbb}}
+  - Draw the process model as {{var:v-6ea4b481}}
   - "Mechanisms are partly sequential: anticipating enables rehearsing"
-  - Fits the routines framing in {{ref:c-5edbfdb0}}
+  - Fits the routines framing in {{ref:c-b9af1354}}
 response: |-
-  This is a very helpful suggestion. We now present a process model ({{var:v-08c71bbb}}) that shows how the three mechanisms relate.
+  This is a very helpful suggestion. We now present a process model ({{var:v-6ea4b481}}) that shows how the three mechanisms relate.

@@ -1,19 +1,19 @@
 variables:
-  - key: v-69418895
+  - key: v-379c9c19
     name: Word count
     value: 10,940 words
-  - key: v-90664903
+  - key: v-4d331356
     name: Interviews
     value: 47 semi-structured interviews
-  - key: v-4814b02e
+  - key: v-92b890f9
     name: Theory section
     value: Section 2.2 (pp. 7–9)
-  - key: v-6a9512f4
+  - key: v-967d5e40
     name: Analysis section
     value: Section 3.3 (pp. 12–14)
-  - key: v-08c71bbb
+  - key: v-6ea4b481
     name: Process model figure
     value: Figure 3
-  - key: v-c8e33976
+  - key: v-03d5345c
     name: Contribution statement
     value: We show how digital twins reorganise maintenance work by shifting its focus from repairing failures to anticipating them.

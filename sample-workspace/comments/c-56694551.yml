@@ -1,0 +1,11 @@
+triage: green
+status: final
+source: [3039+204]
+related: []
+text: |-
+  In summary, points 1 and 2 are my main concerns: the paper needs one clear research question and a theoretical lens that does real work in the findings. Points 3 to 5 should be straightforward to address.
+ideas:
+  - "Main concerns: {{ref:c-5e99c181}} and {{ref:c-c571dc00}}"
+  - "Points 3 to 5: {{ref:c-0eac8f63}}, {{ref:c-d1981701}}, {{ref:c-1d8085ba}}"
+response: |-
+  Thank you for this helpful summary. We address your two main concerns in our responses to {{ref:c-5e99c181}} (the research question) and {{ref:c-c571dc00}} (the theoretical lens), and the remaining points in our responses to {{ref:c-0eac8f63}}, {{ref:c-d1981701}} and {{ref:c-1d8085ba}}.

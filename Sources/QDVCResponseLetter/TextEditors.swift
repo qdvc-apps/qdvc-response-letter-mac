@@ -93,10 +93,29 @@ final class TokenCell: NSTextAttachmentCell {
 
     override func wantsToTrackMouse() -> Bool { false }
 
+    /// A pill too wide for the line (a long Variable, such as a quotation
+    /// from the manuscript) becomes a box as wide as the line, its text
+    /// wrapped inside, rather than running off the edge.
+    override func cellFrame(for textContainer: NSTextContainer, proposedLineFragment lineFrag: NSRect,
+                            glyphPosition position: NSPoint, characterIndex charIndex: Int) -> NSRect {
+        let single = cellSize()
+        let baseline = cellBaselineOffset()
+        // Room for the text's indent (quotes and bullets) as well.
+        let available = max(60, lineFrag.width - 2 * textContainer.lineFragmentPadding - 20)
+        guard single.width > available else { return NSRect(origin: baseline, size: single) }
+        let bounds = (look.text as NSString).boundingRect(
+            with: NSSize(width: available - 12, height: CGFloat.greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: textFont])
+        return NSRect(x: 0, y: baseline.y, width: available, height: ceil(bounds.height) + 4)
+    }
+
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView?) {
         let look = self.look
         let rect = cellFrame.insetBy(dx: 1, dy: 0.5)
-        let path = NSBezierPath(roundedRect: rect, xRadius: rect.height / 2.6, yRadius: rect.height / 2.6)
+        let wrapped = cellFrame.height > cellSize().height + 1
+        let radius = wrapped ? 6 : rect.height / 2.6
+        let path = NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
         look.state.color.withAlphaComponent(look.state == .pending || look.state == .broken ? 0.30 : 0.18).setFill()
         path.fill()
         look.state.color.withAlphaComponent(0.55).setStroke()
@@ -104,7 +123,13 @@ final class TokenCell: NSTextAttachmentCell {
         path.stroke()
         let attrs: [NSAttributedString.Key: Any] = [.font: textFont, .foregroundColor: NSColor.labelColor]
         // Text views are flipped, so y grows downwards from the cell's top.
-        (look.text as NSString).draw(at: NSPoint(x: cellFrame.minX + 6, y: cellFrame.minY + 1), withAttributes: attrs)
+        if wrapped {
+            (look.text as NSString).draw(
+                with: NSRect(x: cellFrame.minX + 6, y: cellFrame.minY + 2, width: cellFrame.width - 12, height: cellFrame.height - 2),
+                options: [.usesLineFragmentOrigin, .usesFontLeading], attributes: attrs)
+        } else {
+            (look.text as NSString).draw(at: NSPoint(x: cellFrame.minX + 6, y: cellFrame.minY + 1), withAttributes: attrs)
+        }
     }
 }
 

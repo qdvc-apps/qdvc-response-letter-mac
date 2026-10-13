@@ -1,10 +1,10 @@
 triage: green
 status: final
 source: [1894+97]
-related: [c-20b157e0]
+related: [c-da4a9bb8]
 text: |-
   3. Please make sure the abstract and introduction state the contribution in one or two sentences.
 ideas: []
 response: |-
   Both the abstract and the introduction now state the contribution in one sentence:
-  > {{var:v-c8e33976}}
+  > {{var:v-03d5345c}}
