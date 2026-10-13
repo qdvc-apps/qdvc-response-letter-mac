@@ -163,11 +163,12 @@ enum MarkupConverter {
         return style
     }
 
-    static func attributes(style: InlineStyle, block: BlockKind, size: CGFloat) -> [NSAttributedString.Key: Any] {
+    static func attributes(style: InlineStyle, block: BlockKind, size: CGFloat,
+                           bulleted: Bool = false) -> [NSAttributedString.Key: Any] {
         [
             .font: font(bold: style.bold, italic: style.italic, size: size),
             .foregroundColor: NSColor.labelColor,
-            .paragraphStyle: paragraphStyle(block),
+            .paragraphStyle: paragraphStyle(block, bulleted: bulleted),
             .rlBold: style.bold,
             .rlItalic: style.italic,
             .rlBlock: block.rawValue,
@@ -175,26 +176,32 @@ enum MarkupConverter {
     }
 
     static func tokenString(_ token: Token, style: InlineStyle, block: BlockKind, size: CGFloat,
-                            provider: TokenProvider) -> NSAttributedString {
+                            provider: TokenProvider, bulleted: Bool = false) -> NSAttributedString {
         let attachment = TokenAttachment(token: token, provider: provider, font: NSFont.systemFont(ofSize: size - 1))
         let s = NSMutableAttributedString(attachment: attachment)
-        s.addAttributes(attributes(style: style, block: block, size: size), range: NSRange(location: 0, length: s.length))
+        s.addAttributes(attributes(style: style, block: block, size: size, bulleted: bulleted),
+                        range: NSRange(location: 0, length: s.length))
         return s
     }
 
-    static func attributed(_ rich: RichText, size: CGFloat, provider: TokenProvider) -> NSAttributedString {
+    /// `bulleted`: every paragraph is drawn as a bullet (the ideas editor).
+    static func attributed(_ rich: RichText, size: CGFloat, provider: TokenProvider,
+                           bulleted: Bool = false) -> NSAttributedString {
         let out = NSMutableAttributedString()
         for (i, p) in rich.paragraphs.enumerated() {
+            let block: BlockKind = bulleted ? .normal : p.block
             for inline in p.inlines {
                 switch inline {
                 case .text(let t, let s):
-                    out.append(NSAttributedString(string: t, attributes: attributes(style: s, block: p.block, size: size)))
+                    out.append(NSAttributedString(string: t, attributes: attributes(style: s, block: block, size: size,
+                                                                                     bulleted: bulleted)))
                 case .token(let t, let s):
-                    out.append(tokenString(t, style: s, block: p.block, size: size, provider: provider))
+                    out.append(tokenString(t, style: s, block: block, size: size, provider: provider, bulleted: bulleted))
                 }
             }
             if i < rich.paragraphs.count - 1 {
-                out.append(NSAttributedString(string: "\n", attributes: attributes(style: .plain, block: p.block, size: size)))
+                out.append(NSAttributedString(string: "\n", attributes: attributes(style: .plain, block: block, size: size,
+                                                                                    bulleted: bulleted)))
             }
         }
         return out
@@ -383,7 +390,8 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
 
     override func readSelection(from pboard: NSPasteboard, type: NSPasteboard.PasteboardType) -> Bool {
         if isRichEditor, type == .responseMarkup, let markup = pboard.string(forType: type), let provider = tokenProvider {
-            let attr = MarkupConverter.attributed(RichText(markup: markup), size: baseSize, provider: provider)
+            let attr = MarkupConverter.attributed(RichText(markup: markup), size: baseSize, provider: provider,
+                                                  bulleted: isBulletList)
             insertText(attr, replacementRange: selectedRange())
             return true
         }
@@ -433,8 +441,11 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
         restyle(range) { $0[key] = !allOn }
     }
 
+    /// Every paragraph a bullet (the ideas editor): no quotes or lists.
+    var isBulletList: Bool { (layoutManager as? MarkupLayoutManager)?.allBullets ?? false }
+
     func toggleBlock(_ block: BlockKind) {
-        guard isRichEditor, let storage = textStorage else { return }
+        guard isRichEditor, !isBulletList, let storage = textStorage else { return }
         let ns = storage.string as NSString
         let range = ns.paragraphRange(for: selectedRange())
         if range.length == 0 {
@@ -472,6 +483,9 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
         switch item.action {
         case #selector(rlToggleBold(_:)), #selector(rlToggleItalic(_:)),
              #selector(rlToggleQuote(_:)), #selector(rlToggleBullets(_:)):
+            if item.action == #selector(rlToggleQuote(_:)) || item.action == #selector(rlToggleBullets(_:)) {
+                return isRichEditor && isEditable && !isBulletList
+            }
             return isRichEditor && isEditable
         default:
             return super.validateUserInterfaceItem(item)
@@ -485,7 +499,8 @@ final class EditorTextView: NSTextView, NSViewToolTipOwner {
         let t = typingAttributes
         let style = InlineStyle(bold: t[.rlBold] as? Bool ?? false, italic: t[.rlItalic] as? Bool ?? false)
         let block = (t[.rlBlock] as? String).flatMap(BlockKind.init) ?? .normal
-        let s = MarkupConverter.tokenString(token, style: style, block: block, size: baseSize, provider: provider)
+        let s = MarkupConverter.tokenString(token, style: style, block: block, size: baseSize, provider: provider,
+                                            bulleted: isBulletList)
         window?.makeFirstResponder(self)
         insertText(s, replacementRange: selectedRange())
     }
@@ -630,13 +645,23 @@ struct RichTextEditor: NSViewRepresentable {
     var onChange: (String) -> Void
     var onFocus: ((EditorTextView) -> Void)?
     var onTokenDoubleClick: ((Token) -> Void)?
+    /// Every paragraph a bullet: the ideas.
+    var bulleted = false
+    /// False for text shown for reference: selectable and copyable only.
+    var editable = true
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeNSView(context: Context) -> NSView {
-        let tv = makeEditorTextView(bulleted: false, rich: true, size: size)
+        let tv = makeEditorTextView(bulleted: bulleted, rich: true, size: size)
+        tv.isEditable = editable
+        tv.isSelectable = true
         let c = context.coordinator
         c.parent = self
+        c.bulleted = bulleted
+        if bulleted {
+            tv.typingAttributes = MarkupConverter.attributes(style: .plain, block: .normal, size: size, bulleted: true)
+        }
         c.provider.look = look
         tv.tokenProvider = c.provider
         tv.placeholder = placeholder
@@ -661,6 +686,7 @@ struct RichTextEditor: NSViewRepresentable {
         c.provider.look = look
         handle?.textView = tv
         tv.placeholder = placeholder
+        if tv.isEditable != editable { tv.isEditable = editable }
         if size != tv.baseSize || markup != c.lastMarkup {
             tv.baseSize = size
             c.load(markup, into: tv, size: size)
@@ -683,12 +709,20 @@ struct RichTextEditor: NSViewRepresentable {
         var lastMarkup = ""
         var signature = 0
         var loading = false
+        var bulleted = false
 
         func load(_ markup: String, into tv: EditorTextView, size: CGFloat) {
             loading = true
             defer { loading = false }
             let selection = tv.selectedRange()
-            let attr = MarkupConverter.attributed(RichText(markup: markup), size: size, provider: provider)
+            // Split lines by hand: RichText(markup:) drops a trailing empty
+            // line, which in the ideas is the idea being started.
+            let rich = bulleted
+                ? RichText(paragraphs: markup.components(separatedBy: "\n").map {
+                    RichText(markup: $0).paragraphs.first ?? RichParagraph()
+                })
+                : RichText(markup: markup)
+            let attr = MarkupConverter.attributed(rich, size: size, provider: provider, bulleted: bulleted)
             tv.textStorage?.setAttributedString(attr)
             let length = (tv.string as NSString).length
             tv.setSelectedRange(NSRange(location: min(selection.location, length), length: 0))

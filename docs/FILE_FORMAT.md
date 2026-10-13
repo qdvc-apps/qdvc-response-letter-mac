@@ -86,14 +86,16 @@ source: [2543+192]              # where it is in the decision letter: offset+len
 related: [c-f0753e0a]           # related comments (kept symmetric)
 text: |-
   3. I would like to know more about the sample. …
-ideas:
-  - It's 47 — fix the 'around fifty' on p. 11
+ideas:                          # one line of markup each
+  - "It's {{var:v-e02cc14b}}: fix the 'around fifty' on p. 11"
 response: |-
   We conducted {{var:v-e02cc14b}} between March 2024 and June 2025 …
 ```
 
-`source` has several ranges after a merge, and none for a comment typed in
-directly. `text` is plain text; `response` is markup.
+`source` has several ranges after a merge. `text` is plain text;
+`response` is markup, and each idea is one line of markup (bold, italic,
+Variables and Cross-references; no quote or bullet marks, since ideas are
+bullets anyway).
 
 ## variables.yml
 

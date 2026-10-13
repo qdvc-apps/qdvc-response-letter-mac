@@ -29,7 +29,8 @@ public enum CSV {
                     c.triage == .none ? "" : c.triage.rawValue,
                     c.status.label,
                     c.text,
-                    c.ideas.map { "• " + $0 }.joined(separator: "\n"),
+                    c.ideas.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                        .map { "• " + letter.ideaText($0, ids: ids) }.joined(separator: "\n"),
                     c.related.compactMap { ids[$0] }.joined(separator: ", "),
                     response,
                     String(TextStats.wordCount(response)),

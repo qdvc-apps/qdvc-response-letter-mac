@@ -52,6 +52,7 @@ extension ResponseLetter {
         case .opening: return "the opening"
         case .closing: return "the closing"
         case .response(let key): return "the response to \(ids[key] ?? "?")"
+        case .ideas(let key): return "the ideas for \(ids[key] ?? "?")"
         }
     }
 
@@ -129,8 +130,10 @@ extension ResponseLetter {
     }
 
     func commentKey(of location: TextLocation) -> String? {
-        if case .response(let key) = location { return key }
-        return nil
+        switch location {
+        case .response(let key), .ideas(let key): return key
+        case .opening, .closing: return nil
+        }
     }
 }
 
@@ -160,6 +163,7 @@ public struct CommentLink: Hashable {
 extension ResponseLetter {
     /// Every link between existing comments, without duplicates; related
     /// links are given once, from the earlier comment to the later.
+    /// Cross-references count from a comment's response and its ideas.
     public func links() -> [CommentLink] {
         var position: [String: Int] = [:]
         for (i, k) in orderedCommentKeys.enumerated() { position[k] = i }
@@ -174,8 +178,9 @@ extension ResponseLetter {
                 guard let pr = position[r], r != key else { continue }
                 add(pk < pr ? CommentLink(from: key, to: r, kind: .related) : CommentLink(from: r, to: key, kind: .related))
             }
-            guard c.response.contains("{{ref:") else { continue }
-            for (_, token) in RichText(markup: c.response).tokens {
+            let markup = c.response + "\n" + c.ideas.joined(separator: "\n")
+            guard markup.contains("{{ref:") else { continue }
+            for (_, token) in RichText(markup: markup).tokens {
                 guard case .ref(let keys) = token else { continue }
                 for k in keys where k != key && position[k] != nil {
                     add(CommentLink(from: key, to: k, kind: keys.count == 1 ? .reference : .pendingReference))

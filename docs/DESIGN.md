@@ -46,13 +46,17 @@ comment" button: a comment missing from the letter is fixed by editing the
 letter (Edit Letter), then marking it. Splitting and merging still change
 how the marked text is divided.
 
-## Links column
+## Related column
 
-Both tables show each comment's links: related comments (a link icon),
+Both tables show each comment's links, each with the other comment's triage
+dot: related comments (a link icon),
 comments its response mentions (→), comments whose responses mention it
 (←) and undecided mentions after a split (orange ?). Clicking one goes to
 that comment on the same page. On "Respond to the comments" the ideas are
-read-only (selectable): they belong to triage.
+read-only (selectable): they belong to triage. Ideas are lines of markup, so
+they can hold Variables and Cross-references (renumbering, splits, merges
+and Issues treat them like responses; their cross-references count as
+links).
 
 ## Progress
 

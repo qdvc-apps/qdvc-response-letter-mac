@@ -12,6 +12,8 @@ struct FormatBar: View {
     @Environment(AppModel.self) private var model
     var editor: () -> EditorTextView?
     var exclude: String?
+    /// Quote and bullet buttons (not for the ideas, which are all bullets).
+    var showsBlocks = true
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -26,10 +28,12 @@ struct FormatBar: View {
                 .help("Bold (⌘B)")
             Button { editor()?.toggleTrait(.rlItalic) } label: { Image(systemName: "italic") }
                 .help("Italic (⌘I)")
-            Button { editor()?.toggleBlock(.quote) } label: { Image(systemName: "text.quote") }
-                .help("Quoted text from the manuscript (⌘')")
-            Button { editor()?.toggleBlock(.bullet) } label: { Image(systemName: "list.bullet") }
-                .help("Bulleted list (⇧⌘7)")
+            if showsBlocks {
+                Button { editor()?.toggleBlock(.quote) } label: { Image(systemName: "text.quote") }
+                    .help("Quoted text from the manuscript (⌘')")
+                Button { editor()?.toggleBlock(.bullet) } label: { Image(systemName: "list.bullet") }
+                    .help("Bulleted list (⇧⌘7)")
+            }
             Divider().frame(height: 14).padding(.horizontal, 4)
             Menu {
                 ForEach(model.letter.variables) { v in

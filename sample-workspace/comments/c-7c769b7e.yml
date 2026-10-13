@@ -1,11 +1,11 @@
 triage: green
 status: final
 source: [1173+111]
-related: [c-034fc3a0]
+related: [c-486d2ad4]
 text: |-
   Finally, please shorten the paper. The current draft is 14,200 words; our limit is 11,000 including references.
 ideas:
   - Cut the second case vignette
   - Merge sections 5.2 and 5.3
 response: |-
-  The revised manuscript is {{var:v-24dd4d65}} including references, within the limit of 11,000. We shortened the findings mainly by shortening the quotations (see our response to {{ref:c-034fc3a0}}).
+  The revised manuscript is {{var:v-f52c92fb}} including references, within the limit of 11,000. We shortened the findings mainly by shortening the quotations (see our response to {{ref:c-486d2ad4}}).

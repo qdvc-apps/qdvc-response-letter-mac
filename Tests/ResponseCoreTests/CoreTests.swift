@@ -274,6 +274,27 @@ final class EditingTests: XCTestCase {
         XCTAssertEqual(links.filter { $0.kind == .pendingReference }.count, 2)
     }
 
+    func testIdeasHoldTokensThatFollowSplits() throws {
+        var letter = try sampleLetter()
+        let a = letter.orderedComments[0].key
+        let r = letter.orderedComments[2].key
+        let v = letter.addVariable(name: "Page", value: "p. 3")
+        letter.comments[r]?.ideas = ["Same as {{ref:\(a)}}", "Check {{var:\(v)}}"]
+        XCTAssertEqual(letter.variableUses()[v], [.ideas(r)])
+        XCTAssertEqual(letter.ideaText(letter.comments[r]!.ideas[0]), "Same as SE-01")
+        XCTAssertTrue(letter.links().contains(CommentLink(from: r, to: a, kind: .reference)))
+        let split = try letter.splitComment(a, atUTF16: 10)
+        XCTAssertEqual(split.pending.map(\.location), [.ideas(r)])
+        XCTAssertTrue(letter.resolvePending(split.pending[0], choosing: [split.secondKey]))
+        XCTAssertEqual(letter.ideaText(letter.comments[r]!.ideas[0]), "Same as SE-02")
+        XCTAssertEqual(letter.comments[r]?.ideas.count, 2)
+        // Markup pasted in with quote or bullet marks becomes plain ideas.
+        XCTAssertEqual(ResponseLetter.ideaLines("> quoted\n- bullet\n\n"), ["quoted", "bullet"])
+        // While typing, an empty line for the next idea is kept.
+        letter.setMarkup("first\n", at: .ideas(r))
+        XCTAssertEqual(letter.markup(at: .ideas(r)), "first\n")
+    }
+
     func testProgress() throws {
         var letter = try sampleLetter()
         let keys = letter.orderedCommentKeys

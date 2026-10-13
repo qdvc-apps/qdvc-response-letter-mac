@@ -157,7 +157,8 @@ public struct Comment: Identifiable, Equatable, Hashable {
     /// The editor's or reviewer's words, as marked in the decision letter
     /// (and possibly tidied up since).
     public var text: String
-    /// Initial ideas for a response, one dot point each.
+    /// Initial ideas for a response, one dot point each, each a line of
+    /// markup (so they can hold Variables and Cross-references).
     public var ideas: [String]
     /// The response, in markup (RichText).
     public var response: String
@@ -244,6 +245,8 @@ public struct LetterSettings: Equatable {
 /// Where a piece of rich text lives.
 public enum TextLocation: Hashable {
     case response(String)
+    /// A comment's ideas, one line of markup per idea.
+    case ideas(String)
     case opening
     case closing
 }
@@ -328,7 +331,7 @@ public struct ResponseLetter: Equatable {
     // MARK: Rich text locations
 
     public var textLocations: [TextLocation] {
-        [.opening] + orderedCommentKeys.map { .response($0) } + [.closing]
+        [.opening] + orderedCommentKeys.flatMap { [TextLocation.ideas($0), .response($0)] } + [.closing]
     }
 
     public func markup(at location: TextLocation) -> String {
@@ -336,6 +339,7 @@ public struct ResponseLetter: Equatable {
         case .opening: return opening
         case .closing: return closing
         case .response(let key): return comments[key]?.response ?? ""
+        case .ideas(let key): return comments[key]?.ideas.joined(separator: "\n") ?? ""
         }
     }
 
@@ -344,7 +348,29 @@ public struct ResponseLetter: Equatable {
         case .opening: opening = markup
         case .closing: closing = markup
         case .response(let key): comments[key]?.response = markup
+        case .ideas(let key): comments[key]?.ideas = Self.ideaLines(markup, keepEmpty: true)
         }
+    }
+
+    /// Ideas from markup: one idea per line, without quote or bullet marks
+    /// (ideas are always bullets). `keepEmpty` keeps empty lines, as while
+    /// typing (Return starts the next idea); otherwise trailing ones go.
+    public static func ideaLines(_ markup: String, keepEmpty: Bool = false) -> [String] {
+        var lines = markup.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n").map { line -> String in
+            guard !line.isEmpty else { return "" }
+            var p = RichText(markup: line).paragraphs.first ?? RichParagraph()
+            p.block = .normal
+            return RichText(paragraphs: [p]).markup
+        }
+        if !keepEmpty {
+            while lines.last?.trimmingCharacters(in: .whitespaces).isEmpty == true { lines.removeLast() }
+        }
+        return lines
+    }
+
+    /// An idea as plain text, with its Variables and Cross-references shown.
+    public func ideaText(_ idea: String, ids: [String: String]? = nil) -> String {
+        RichText(markup: idea).plainText { self.tokenDisplay($0, ids: ids) }
     }
 
     // MARK: Decision letter text

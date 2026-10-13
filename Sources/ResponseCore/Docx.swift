@@ -80,10 +80,14 @@ public enum DocxExport {
                 var idCell = w.paragraph(w.run(ids[key] ?? "", bold: true))
                 idCell += w.paragraph(w.run(c.triage.label, size: letter.settings.fontSize - 2))
                 idCell += w.paragraph(w.run(c.status.label, italic: true, size: letter.settings.fontSize - 2))
-                var ideas = ""
-                for idea in c.ideas where !idea.trimmingCharacters(in: .whitespaces).isEmpty {
-                    ideas += w.paragraph(w.run(idea), style: "ListBullet")
+                // Ideas are markup lines: rendered as bullets, with their
+                // Variables and Cross-references.
+                let bullets = c.ideas.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.map { idea -> RichParagraph in
+                    var p = RichText(markup: idea).paragraphs.first ?? RichParagraph()
+                    p.block = .bullet
+                    return p
                 }
+                var ideas = w.richParagraphs(RichText(paragraphs: bullets))
                 let related = c.related.compactMap { ids[$0] }
                 if !related.isEmpty {
                     ideas += w.paragraph(w.run("Related: " + related.joined(separator: ", "), italic: true))

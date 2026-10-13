@@ -409,7 +409,7 @@ final class AppModel {
         guard !q.isEmpty else { return true }
         if (ids[c.key] ?? "").localizedCaseInsensitiveContains(q) { return true }
         if c.text.localizedCaseInsensitiveContains(q) { return true }
-        if c.ideas.contains(where: { $0.localizedCaseInsensitiveContains(q) }) { return true }
+        if c.ideas.contains(where: { letter.ideaText($0, ids: ids).localizedCaseInsensitiveContains(q) }) { return true }
         let response = c.responseText.plainText { self.letter.tokenDisplay($0, ids: ids) }
         return response.localizedCaseInsensitiveContains(q)
     }
@@ -548,10 +548,11 @@ final class AppModel {
         updateText { $0.comments[key]?.text = text }
     }
 
-    func setIdeas(_ key: String, _ text: String) {
-        let ideas = text.components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
-        // Keep a trailing empty line while typing; it is dropped on reload.
-        updateText { $0.comments[key]?.ideas = ideas.last == "" ? Array(ideas.dropLast()) : ideas }
+    /// Ideas from the ideas editor: markup, one idea per line. Empty lines
+    /// are kept while typing (Return starts the next idea) and tidied away
+    /// when the letter is next loaded.
+    func setIdeas(_ key: String, _ markup: String) {
+        updateText { $0.setMarkup(markup, at: .ideas(key)) }
     }
 
     func setResponse(_ key: String, _ markup: String) {

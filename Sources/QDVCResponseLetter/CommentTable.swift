@@ -17,7 +17,7 @@ enum ColumnKind: Hashable {
         case .status: return "Status"
         case .comment: return "Editor/Reviewer Comments"
         case .ideas, .ideasReadOnly: return "Ideas"
-        case .links: return "Links"
+        case .links: return "Related"
         case .response: return "Response"
         }
     }
@@ -284,20 +284,27 @@ struct CommentTableRow: View {
                 onFocus: { _ in model.focusRow(key) }
             )
         case .ideas:
-            PlainTextEditor(
-                text: comment.ideas.joined(separator: "\n"), size: size, bulleted: true,
-                placeholder: "Ideas, one per line",
+            RichTextEditor(
+                markup: comment.ideas.joined(separator: "\n"), size: size, tokenSignature: model.tokenSignature,
+                look: { model.look($0) }, placeholder: "Ideas, one per line",
                 onChange: { model.setIdeas(key, $0) },
-                onFocus: { _ in model.focusRow(key) }
+                onFocus: { view in
+                    model.activeEditor = view
+                    model.focusRow(key)
+                },
+                onTokenDoubleClick: { model.openToken($0) },
+                bulleted: true
             )
         case .ideasReadOnly:
             // Ideas are written while triaging; here they are for reference
             // (selectable, so they can be copied).
-            PlainTextEditor(
-                text: comment.ideas.joined(separator: "\n"), size: size, bulleted: true,
-                placeholder: "No ideas",
+            RichTextEditor(
+                markup: comment.ideas.joined(separator: "\n"), size: size, tokenSignature: model.tokenSignature,
+                look: { model.look($0) }, placeholder: "No ideas",
                 onChange: { _ in },
                 onFocus: { _ in model.focusRow(key) },
+                onTokenDoubleClick: { model.openToken($0) },
+                bulleted: true,
                 editable: false
             )
         case .links:
@@ -397,7 +404,7 @@ struct ResponseEditorView: View {
                     Toggle("Triage", isOn: $showTriage)
                     Toggle("Status", isOn: $showStatus)
                     Toggle("Ideas", isOn: $showIdeas)
-                    Toggle("Links", isOn: $showLinks)
+                    Toggle("Related", isOn: $showLinks)
                 } label: {
                     Label("Columns", systemImage: "rectangle.split.3x1")
                 }
@@ -429,6 +436,16 @@ struct TriageEditorView: View {
     var body: some View {
         let p = model.letter.progress()
         VStack(spacing: 0) {
+            HStack {
+                // For the ideas: Variables and Cross-references (and bold,
+                // italic); ideas are always bullets.
+                FormatBar(editor: { model.activeEditor }, exclude: model.focusedCommentKey, showsBlocks: false)
+                    .disabled(model.letter.orderedCommentKeys.isEmpty)
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            Divider()
             CommentTable { width in .triage(total: width, scale: model.textScale) }
             Divider()
             HStack {
@@ -508,6 +525,9 @@ struct LinkChips: View {
                             Image(systemName: symbol(chip.kind))
                                 .font(.system(size: 9 * scale, weight: .semibold))
                                 .foregroundStyle(tint(chip.kind))
+                            if let triage = model.letter.comments[chip.other]?.triage, triage != .none {
+                                TriageDot(triage: triage, size: 7 * scale)
+                            }
                             Text(id).font(.system(size: 11 * scale, weight: .medium, design: .monospaced))
                         }
                         .padding(.horizontal, 5)

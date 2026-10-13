@@ -29,7 +29,8 @@ struct OverviewView: View {
                 return OverviewRow(
                     id: key, displayID: ids[key] ?? "?", section: section.title, triage: c.triage, status: c.status,
                     comment: TextTools.excerpt(c.text, limit: 220),
-                    ideas: c.ideas.filter { !$0.isEmpty }.map { "• " + $0 }.joined(separator: "  "),
+                    ideas: c.ideas.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                        .map { "• " + letter.ideaText($0, ids: ids) }.joined(separator: "  "),
                     response: TextTools.excerpt(c.responseText.plainText { letter.tokenDisplay($0, ids: ids) }, limit: 220)
                 )
             }
@@ -186,6 +187,7 @@ struct VariablesView: View {
         case .opening: return "opening"
         case .closing: return "closing"
         case .response(let k): return ids[k] ?? "?"
+        case .ideas(let k): return "ideas for \(ids[k] ?? "?")"
         }
     }
 }

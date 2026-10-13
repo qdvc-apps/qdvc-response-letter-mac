@@ -364,7 +364,7 @@ public enum Workspace {
         return Comment(
             key: key,
             text: normalise(text),
-            ideas: n["ideas"]?.strings ?? [],
+            ideas: ResponseLetter.ideaLines((n["ideas"]?.strings ?? []).joined(separator: "\n")),
             response: normalise(response),
             triage: n["triage"]?.string.flatMap(Triage.init(rawValue:)) ?? .none,
             status: n["status"]?.string.flatMap(Status.init(lenient:)) ?? .todo,
