@@ -10,7 +10,7 @@ and export the classic three-column Word table: ID, Editor/Reviewer
 Comments, Response.
 
 A native SwiftUI and AppKit app for macOS 14 (Sonoma)
-and later.
+and later. See [Build and run](#build-and-run) to get started on your Mac.
 
 Each response letter is a plain folder of small YAML and text files, one
 file per comment, so it diffs cleanly and is easy to keep in Git and share
