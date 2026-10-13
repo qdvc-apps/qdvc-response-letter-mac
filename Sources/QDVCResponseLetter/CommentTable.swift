@@ -8,7 +8,7 @@ import SwiftUI
 // in their columns (TableLayout).
 
 enum ColumnKind: Hashable {
-    case id, triageDot, triageLabelled, status, comment, ideas, response
+    case id, triageDot, triageLabelled, status, comment, ideas, ideasReadOnly, links, response
 
     var title: String {
         switch self {
@@ -16,7 +16,8 @@ enum ColumnKind: Hashable {
         case .triageDot, .triageLabelled: return "Triage"
         case .status: return "Status"
         case .comment: return "Editor/Reviewer Comments"
-        case .ideas: return "Ideas"
+        case .ideas, .ideasReadOnly: return "Ideas"
+        case .links: return "Links"
         case .response: return "Response"
         }
     }
@@ -41,31 +42,38 @@ struct TableLayout: Equatable {
         return 0
     }
 
-    /// ID, triage, status, comment, ideas, response.
-    static func response(total: CGFloat, scale: CGFloat, showTriage: Bool, showStatus: Bool, showIdeas: Bool) -> TableLayout {
+    static func linksWidth(_ scale: CGFloat) -> CGFloat { 104 * scale }
+
+    /// ID, triage, status, comment, ideas (read-only), links, response.
+    static func response(total: CGFloat, scale: CGFloat, showTriage: Bool, showStatus: Bool, showIdeas: Bool,
+                         showLinks: Bool) -> TableLayout {
         var columns = [Column(kind: .id, width: 76 * scale)]
         if showTriage { columns.append(Column(kind: .triageDot, width: 58 * scale)) }
         if showStatus { columns.append(Column(kind: .status, width: 100 * scale)) }
-        let rest = max(240, total - columns.reduce(0) { $0 + $1.width })
+        let links = showLinks ? linksWidth(scale) : 0
+        let rest = max(240, total - columns.reduce(0) { $0 + $1.width } - links)
         let comment = floor(rest * (showIdeas ? 0.34 : 0.42))
         let ideas = showIdeas ? floor(rest * 0.20) : 0
         columns.append(Column(kind: .comment, width: comment))
-        if showIdeas { columns.append(Column(kind: .ideas, width: ideas)) }
+        if showIdeas { columns.append(Column(kind: .ideasReadOnly, width: ideas)) }
+        if showLinks { columns.append(Column(kind: .links, width: links)) }
         columns.append(Column(kind: .response, width: rest - comment - ideas))
         return TableLayout(columns: columns)
     }
 
-    /// ID, comment, triage (with its label), ideas.
+    /// ID, comment, triage (with its label), ideas, links.
     static func triage(total: CGFloat, scale: CGFloat) -> TableLayout {
         let id: CGFloat = 76 * scale
         let triage: CGFloat = 170 * scale
-        let rest = max(240, total - id - triage)
+        let links = linksWidth(scale)
+        let rest = max(240, total - id - triage - links)
         let comment = floor(rest * 0.56)
         return TableLayout(columns: [
             Column(kind: .id, width: id),
             Column(kind: .comment, width: comment),
             Column(kind: .triageLabelled, width: triage),
             Column(kind: .ideas, width: rest - comment),
+            Column(kind: .links, width: links),
         ])
     }
 }
@@ -132,6 +140,7 @@ struct CommentTableRows: View {
     var body: some View {
         let ids = model.ids
         let flagged = Set(model.issues.filter(\.kind.isBlocking).compactMap(\.commentKey))
+        let links = LinkChip.byComment(model.letter.links())
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
                 LazyVStack(alignment: .leading, spacing: 0) {
@@ -142,7 +151,8 @@ struct CommentTableRows: View {
                             ForEach(keys, id: \.self) { key in
                                 if let c = model.letter.comments[key] {
                                     CommentTableRow(key: key, comment: c, id: ids[key] ?? "?", layout: layout,
-                                                    focused: model.focusedCommentKey == key, flagged: flagged.contains(key))
+                                                    focused: model.focusedCommentKey == key, flagged: flagged.contains(key),
+                                                    links: links[key] ?? [])
                                         .id(key)
                                 }
                             }
@@ -182,20 +192,11 @@ struct SectionBand: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 8)
             Spacer(minLength: 8)
-            Button {
-                model.newComment(inSection: section.key)
-            } label: {
-                Image(systemName: "plus").foregroundStyle(.white)
-            }
-            .buttonStyle(.borderless)
-            .help("New comment in \(section.title)")
-            .padding(.trailing, 10)
         }
         .padding(.vertical, 6 * model.textScale)
         .background(Color.black)
         .contextMenu {
             Button("Edit Section…") { model.editSection(section.key) }
-            Button("New Comment in \(section.title)") { model.newComment(inSection: section.key) }
             Divider()
             Button("Move Section Up") { model.moveSection(section.key, by: -1) }
             Button("Move Section Down") { model.moveSection(section.key, by: 1) }
@@ -214,6 +215,7 @@ struct CommentTableRow: View {
     let layout: TableLayout
     let focused: Bool
     let flagged: Bool
+    let links: [LinkChip]
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -288,6 +290,20 @@ struct CommentTableRow: View {
                 onChange: { model.setIdeas(key, $0) },
                 onFocus: { _ in model.focusRow(key) }
             )
+        case .ideasReadOnly:
+            // Ideas are written while triaging; here they are for reference
+            // (selectable, so they can be copied).
+            PlainTextEditor(
+                text: comment.ideas.joined(separator: "\n"), size: size, bulleted: true,
+                placeholder: "No ideas",
+                onChange: { _ in },
+                onFocus: { _ in model.focusRow(key) },
+                editable: false
+            )
+        case .links:
+            LinkChips(links: links, scale: scale)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 7)
         case .response:
             RichTextEditor(
                 markup: comment.response, size: size, tokenSignature: model.tokenSignature,
@@ -369,6 +385,7 @@ struct ResponseEditorView: View {
     @AppStorage("responseEditor.showTriage") private var showTriage = true
     @AppStorage("responseEditor.showStatus") private var showStatus = true
     @AppStorage("responseEditor.showIdeas") private var showIdeas = true
+    @AppStorage("responseEditor.showLinks") private var showLinks = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -380,6 +397,7 @@ struct ResponseEditorView: View {
                     Toggle("Triage", isOn: $showTriage)
                     Toggle("Status", isOn: $showStatus)
                     Toggle("Ideas", isOn: $showIdeas)
+                    Toggle("Links", isOn: $showLinks)
                 } label: {
                     Label("Columns", systemImage: "rectangle.split.3x1")
                 }
@@ -393,7 +411,7 @@ struct ResponseEditorView: View {
             Divider()
             CommentTable { width in
                 .response(total: width, scale: model.textScale, showTriage: showTriage,
-                          showStatus: showStatus, showIdeas: showIdeas)
+                          showStatus: showStatus, showIdeas: showIdeas, showLinks: showLinks)
             }
         }
     }
@@ -414,7 +432,7 @@ struct TriageEditorView: View {
             CommentTable { width in .triage(total: width, scale: model.textScale) }
             Divider()
             HStack {
-                Text("⌘1 easy · ⌘2 trickier · ⌘3 needs discussion · ⌘0 clear · ⌘[ ⌘] previous and next comment")
+                Text("⌘1 trivial · ⌘2 clear solution · ⌘3 needs discussion · ⌘0 clear · ⌘[ ⌘] previous and next comment")
                     .lineLimit(1)
                 Spacer()
                 Text("\(p.total - p.count(.none)) of \(p.total) triaged").monospacedDigit()
@@ -423,6 +441,109 @@ struct TriageEditorView: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
+        }
+    }
+}
+
+// MARK: - Links column
+
+/// A link from one comment to another, as shown in the Links column.
+struct LinkChip: Identifiable, Equatable {
+    enum Kind: Equatable {
+        /// Related, either way round.
+        case related
+        /// This comment's response mentions the other.
+        case mentions
+        /// The other comment's response mentions this one.
+        case mentionedBy
+        /// A mention still undecided after a split.
+        case pending
+    }
+
+    var other: String
+    var kind: Kind
+
+    var id: String { "\(other)-\(kind)" }
+
+    /// The chips for every comment, from the letter's links.
+    static func byComment(_ links: [CommentLink]) -> [String: [LinkChip]] {
+        var result: [String: [LinkChip]] = [:]
+        func add(_ key: String, _ chip: LinkChip) {
+            if !(result[key]?.contains(chip) ?? false) { result[key, default: []].append(chip) }
+        }
+        for link in links {
+            switch link.kind {
+            case .related:
+                add(link.from, LinkChip(other: link.to, kind: .related))
+                add(link.to, LinkChip(other: link.from, kind: .related))
+            case .reference:
+                add(link.from, LinkChip(other: link.to, kind: .mentions))
+                add(link.to, LinkChip(other: link.from, kind: .mentionedBy))
+            case .pendingReference:
+                add(link.from, LinkChip(other: link.to, kind: .pending))
+            }
+        }
+        return result
+    }
+}
+
+/// The comments a comment is linked to: click one to go to it.
+struct LinkChips: View {
+    @Environment(AppModel.self) private var model
+    let links: [LinkChip]
+    let scale: CGFloat
+
+    var body: some View {
+        if links.isEmpty {
+            Text("—").foregroundStyle(.tertiary).font(.system(size: 12 * scale))
+        } else {
+            let ids = model.ids
+            VStack(alignment: .leading, spacing: 4 * scale) {
+                ForEach(links) { chip in
+                    let id = ids[chip.other] ?? "?"
+                    Button {
+                        model.reveal(chip.other)
+                    } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: symbol(chip.kind))
+                                .font(.system(size: 9 * scale, weight: .semibold))
+                                .foregroundStyle(tint(chip.kind))
+                            Text(id).font(.system(size: 11 * scale, weight: .medium, design: .monospaced))
+                        }
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(tint(chip.kind).opacity(0.12)))
+                    }
+                    .buttonStyle(.plain)
+                    .help(help(chip.kind, id))
+                }
+            }
+        }
+    }
+
+    func symbol(_ kind: LinkChip.Kind) -> String {
+        switch kind {
+        case .related: return "link"
+        case .mentions: return "arrow.right"
+        case .mentionedBy: return "arrow.left"
+        case .pending: return "questionmark"
+        }
+    }
+
+    func tint(_ kind: LinkChip.Kind) -> Color {
+        switch kind {
+        case .related: return .secondary
+        case .mentions, .mentionedBy: return .indigo
+        case .pending: return .orange
+        }
+    }
+
+    func help(_ kind: LinkChip.Kind, _ id: String) -> String {
+        switch kind {
+        case .related: return "Related to \(id). Click to go to it."
+        case .mentions: return "This response mentions \(id). Click to go to it."
+        case .mentionedBy: return "Mentioned in the response to \(id). Click to go to it."
+        case .pending: return "This response mentions \(id) or another part of a split comment: decide which in Issues."
         }
     }
 }

@@ -274,6 +274,20 @@ final class EditingTests: XCTestCase {
         XCTAssertEqual(links.filter { $0.kind == .pendingReference }.count, 2)
     }
 
+    func testProgress() throws {
+        var letter = try sampleLetter()
+        let keys = letter.orderedCommentKeys
+        letter.comments[keys[0]]?.triage = .green
+        letter.comments[keys[0]]?.ideas = ["thank them"]
+        letter.comments[keys[1]]?.triage = .red
+        letter.comments[keys[1]]?.ideas = ["  "]
+        letter.comments[keys[2]]?.ideas = ["untriaged idea"]
+        let p = letter.progress()
+        XCTAssertEqual(p.triaged, 2)
+        XCTAssertEqual(p.triagedWithIdeas, 1)
+        XCTAssertEqual(Triage.yellow.label, "Clear solution")
+    }
+
     func testUnwrap() {
         let text = "This is a hard-\nwrapped line\nthat continues.\n\n1. A list item\n2. Another\n\n\nEnd"
         XCTAssertEqual(TextTools.unwrap(text), "This is a hard- wrapped line that continues.\n\n1. A list item\n2. Another\n\nEnd")

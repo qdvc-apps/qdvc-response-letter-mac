@@ -182,9 +182,6 @@ struct ResponseCommands: Commands {
                 model.sheet = .section(model.newSectionDraft(anchor: nil, hint: ""))
             }
             .disabled(!model.isOpen)
-            Button("New Comment") { model.newComment() }
-                .keyboardShortcut("n", modifiers: [.command, .option])
-                .disabled(!model.isOpen || model.letter.sections.isEmpty)
             Divider()
             Button("Split at Insertion Point") { model.splitAtCursor() }
                 .keyboardShortcut("d", modifiers: [.command, .option])

@@ -679,22 +679,6 @@ final class AppModel {
         }
     }
 
-    func newComment() {
-        let after = selectedCommentKey
-        let section = after.flatMap { letter.section(ofComment: $0)?.key } ?? letter.sections.last?.key
-        guard let section else {
-            errorMessage = EditError.noSection.localizedDescription
-            return
-        }
-        if let key = perform("New Comment", { $0.addComment(inSection: section, after: after) }), let key {
-            reveal(key)
-        }
-    }
-
-    func newComment(inSection section: String) {
-        if let key = perform("New Comment", { $0.addComment(inSection: section) }), let key { reveal(key) }
-    }
-
     func deleteComments(_ keys: [String]? = nil) {
         let keys = keys ?? targetKeys
         guard !keys.isEmpty else { return }

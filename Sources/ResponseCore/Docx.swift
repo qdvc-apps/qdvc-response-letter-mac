@@ -62,7 +62,7 @@ public enum DocxExport {
         var subtitle = "Discussion draft for co-authors, \(formatter.string(from: date))."
         if !letter.settings.manuscript.isEmpty { subtitle = "Manuscript \(letter.settings.manuscript). " + subtitle }
         body += w.paragraph(w.run(subtitle, italic: true))
-        let triage = "Triage: \(p.count(.green)) easy, \(p.count(.yellow)) trickier, \(p.count(.red)) needing discussion"
+        let triage = "Triage: \(p.count(.green)) trivial, \(p.count(.yellow)) with a clear solution, \(p.count(.red)) needing discussion"
             + (p.count(.none) > 0 ? ", \(p.count(.none)) not yet triaged" : "") + "."
         let status = "Responses: \(p.count(.final)) final, \(p.count(.drafted)) drafted, \(p.count(.todo)) to do, of \(p.total)."
         body += w.paragraph(w.run(triage + " " + status))

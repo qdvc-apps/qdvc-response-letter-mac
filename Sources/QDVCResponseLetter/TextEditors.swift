@@ -765,11 +765,15 @@ struct PlainTextEditor: NSViewRepresentable {
     var onChange: (String) -> Void
     var onSelectionChange: ((NSRange) -> Void)?
     var onFocus: ((EditorTextView) -> Void)?
+    /// False for text shown for reference: selectable and copyable only.
+    var editable = true
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeNSView(context: Context) -> NSView {
         let tv = makeEditorTextView(bulleted: bulleted, rich: false, size: size)
+        tv.isEditable = editable
+        tv.isSelectable = true
         context.coordinator.parent = self
         tv.placeholder = placeholder
         tv.delegate = context.coordinator
@@ -786,6 +790,7 @@ struct PlainTextEditor: NSViewRepresentable {
         guard let tv = editorTextView(in: view) else { return }
         context.coordinator.parent = self
         tv.placeholder = placeholder
+        if tv.isEditable != editable { tv.isEditable = editable }
         if text != context.coordinator.lastText || size != tv.baseSize {
             tv.baseSize = size
             tv.font = NSFont.systemFont(ofSize: size)

@@ -21,7 +21,7 @@ extension Triage {
         }
     }
 
-    /// The menu and help text: "Easy (green)".
+    /// The menu and help text: "Trivial (green)".
     var menuTitle: String {
         self == .none ? "Not Triaged" : "\(label) (\(rawValue.capitalized))"
     }

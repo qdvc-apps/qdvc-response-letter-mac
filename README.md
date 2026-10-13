@@ -47,16 +47,20 @@ in [docs/DESIGN.md](docs/DESIGN.md).
   or deleted and asks what to do.
 - **Triage the comments**: the same kind of table as “Respond to the comments”, with
   the ID, comment, triage and ideas columns, every cell shown in full and
-  edited in place. Triage each comment green (easy), yellow (trickier) or
-  red (needs discussion with co-authors) from its triage cell or with ⌘1–⌘3
+  edited in place, plus a Links column. Triage each comment green
+  (trivial), yellow (clear solution) or red (needs discussion with
+  co-authors) from its triage cell or with ⌘1–⌘3
   (⌘0 clears); ideas are dot points, one per line. The inspector has the
   status and related comments (link comments that ask for the same thing,
   such as an associate editor summarising two reviewers).
 - **Respond to the comments**: the whole response letter as one table, as in a
   word processor, so neighbouring comments stay in view. Black bands start
   each section; every cell (comment, ideas, response) is shown in full and
-  edited in place, and rows grow as you type. Hide the triage, status or
-  ideas columns from Columns. Responses have bold (⌘B), italic (⌘I),
+  edited in place, and rows grow as you type. The ideas (written while
+  triaging) are shown for reference, read-only but selectable; the Links
+  column lists related comments and cross-references either way, and
+  clicking one goes to it. Hide the triage, status, ideas or links columns
+  from Columns. Responses have bold (⌘B), italic (⌘I),
   quoted manuscript text (⌘') and bullets (⇧⌘7), plus two kinds of linked
   text, shown as pills:
   - **Variables**: text with one official version, such as a page
@@ -101,6 +105,13 @@ size and quote style are in Letter Settings (⌥⌘L), as is the ID style
 (⌥⇧⌘E): landscape A4, with each comment's triage colour, status, ideas,
 related comments and draft response, and a summary of progress. **Export
 Comments as CSV** for spreadsheets.
+
+The sidebar shows two progress bars: **Triage** (dark: triaged and with
+ideas written down; light: triaged) and **Respond** (dark: final; light:
+drafted).
+
+Comments come from the decision letter: mark them there (or edit the letter
+to add text to mark). There is no way to add a comment that isn't in it.
 
 **Large text** (the toolbar's text-size button, or ⌥⌘=) makes the text
 in Overview, the Decision Letter, both editors and Opening & Closing half as
@@ -201,7 +212,6 @@ not with `swift run`.
 | ⇧⌘1 | Welcome window (recent response letters) |
 | ⌘K | Mark selected text as a comment (Decision Letter) |
 | ⇧⌘K | New section at the selection (Decision Letter) |
-| ⌥⌘N | New comment |
 | ⌘1 ⌘2 ⌘3 / ⌘0 | Triage green, yellow, red / clear |
 | ⌥⌘1 ⌥⌘2 ⌥⌘3 | Status to do, drafted, final |
 | ⌥⌘D | Split the comment at the insertion point |

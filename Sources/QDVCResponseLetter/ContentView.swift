@@ -174,23 +174,60 @@ struct SidebarView: View {
     }
 }
 
+/// Progress through the workflow, at the foot of the sidebar: triage (dark:
+/// triaged with ideas written down; light: triaged) and responses (dark:
+/// final; light: drafted).
 struct ProgressFooter: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
         let p = model.letter.progress()
         if p.total > 0 {
-            VStack(alignment: .leading, spacing: 4) {
-                ProgressView(value: p.fractionDone)
-                    .tint(.green)
-                Text("\(p.count(.final)) final · \(p.count(.drafted)) drafted · \(p.count(.todo)) to do")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                WorkflowBar(title: "Triage", total: p.total, dark: p.triagedWithIdeas, light: p.triaged,
+                            tint: .orange,
+                            caption: "\(p.triaged) of \(p.total) triaged · \(p.triagedWithIdeas) with ideas",
+                            help: "Dark: triaged and with ideas. Light: triaged.")
+                WorkflowBar(title: "Respond", total: p.total, dark: p.count(.final),
+                            light: p.count(.final) + p.count(.drafted), tint: .green,
+                            caption: "\(p.count(.final)) final · \(p.count(.drafted)) drafted · \(p.count(.todo)) to do",
+                            help: "Dark: final. Light: drafted.")
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .help("Drafted responses count half")
+            .padding(.vertical, 10)
         }
+    }
+}
+
+/// A bar with a dark part laid over a light part, both counted out of
+/// `total`.
+struct WorkflowBar: View {
+    var title: String
+    var total: Int
+    var dark: Int
+    var light: Int
+    var tint: Color
+    var caption: String
+    var help: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title).font(.caption.weight(.semibold))
+            GeometryReader { geo in
+                let w = geo.size.width
+                let f = { (n: Int) in total == 0 ? 0 : w * CGFloat(min(n, total)) / CGFloat(total) }
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.secondary.opacity(0.18))
+                    Capsule().fill(tint.opacity(0.38)).frame(width: f(light))
+                    Capsule().fill(tint).frame(width: f(dark))
+                }
+            }
+            .frame(height: 6)
+            Text(caption).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+        }
+        .help(help)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title): \(caption)")
     }
 }
 

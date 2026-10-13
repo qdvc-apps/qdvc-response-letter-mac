@@ -39,6 +39,27 @@ as they are in the Word document, so neighbouring comments stay in view.
   solid lines for related comments and dashed arrows for
   cross-references. Selecting a card dims everything it isn't linked to.
 
+## Comments come from the letter
+
+Every comment is marked in the decision letter, so the tables have no "new
+comment" button: a comment missing from the letter is fixed by editing the
+letter (Edit Letter), then marking it. Splitting and merging still change
+how the marked text is divided.
+
+## Links column
+
+Both tables show each comment's links: related comments (a link icon),
+comments its response mentions (→), comments whose responses mention it
+(←) and undecided mentions after a split (orange ?). Clicking one goes to
+that comment on the same page. On "Respond to the comments" the ideas are
+read-only (selectable): they belong to triage.
+
+## Progress
+
+Two bars at the foot of the sidebar follow the workflow: Triage (dark:
+triaged and with at least one idea; light: triaged) and Respond (dark:
+final; light: drafted).
+
 ## Large text
 
 A toolbar toggle (⌥⌘=) scales the text, and the fixed columns and controls

@@ -7,8 +7,8 @@ public enum Triage: String, CaseIterable, Equatable, Hashable, Comparable {
     public var label: String {
         switch self {
         case .none: return "Not triaged"
-        case .green: return "Easy"
-        case .yellow: return "Trickier"
+        case .green: return "Trivial"
+        case .yellow: return "Clear solution"
         case .red: return "Needs discussion"
         }
     }
@@ -372,6 +372,10 @@ public struct ResponseLetter: Equatable {
         public var total = 0
         public var byStatus: [Status: Int] = [:]
         public var byTriage: [Triage: Int] = [:]
+        /// Triaged, and with at least one idea written down.
+        public var triagedWithIdeas = 0
+
+        public var triaged: Int { total - count(.none) }
 
         public init() {}
 
@@ -392,6 +396,9 @@ public struct ResponseLetter: Equatable {
             p.total += 1
             p.byStatus[c.status, default: 0] += 1
             p.byTriage[c.triage, default: 0] += 1
+            if c.triage != .none, c.ideas.contains(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }) {
+                p.triagedWithIdeas += 1
+            }
         }
         return p
     }
